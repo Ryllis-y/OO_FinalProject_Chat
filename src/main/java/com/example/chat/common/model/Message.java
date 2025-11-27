@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,4 +29,6 @@ public class Message {
     // @Builder.Default 防止 Builder 模式覆盖掉初始化值
     @Builder.Default
     private Set<String> readBy = ConcurrentHashMap.newKeySet();
+    @Builder.Default
+    private Map<String, Set<String>> reactions = new ConcurrentHashMap<>();
 }

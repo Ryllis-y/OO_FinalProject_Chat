@@ -1,5 +1,6 @@
 package com.example.chat.handler;
 
+import com.example.chat.common.model.Message;
 import com.example.chat.common.model.User;
 import com.example.chat.common.packet.WsRequest;
 import com.example.chat.common.packet.WsResponse;
@@ -16,6 +17,9 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
 /**
@@ -103,6 +107,9 @@ public class ChatHandler extends TextWebSocketHandler {
                 break;
             case "MSG_READ":
                 handleMsgRead(session, request);
+                break;
+            case "GET_HISTORY":
+                handleGetHistory(session, request);
                 break;
 
             default:
@@ -383,7 +390,87 @@ public class ChatHandler extends TextWebSocketHandler {
             sendJson(session, WsResponse.builder().type("SYS_NOTICE").msg("已踢出 " + targetUser).build());
         }
     }
+    // 1. 在 switch 中增加 case "MSG_REACT": handleMsgReact(session, request); break;
 
+    /**
+     * 处理消息点赞/点踩
+     * (已修复：使用显式 Map 对象，解决 isAdd 变量报错)
+     */
+    private void handleMsgReact(WebSocketSession session, WsRequest request) {
+        // 1. 获取基础信息
+        String username = (String) session.getAttributes().get("username");
+        if (username == null) return;
+
+        if (!request.getParams().has("msgId") || !request.getParams().has("reactType")) {
+            return;
+        }
+        String msgId = request.getParams().get("msgId").asText();
+        String reactType = request.getParams().get("reactType").asText(); // "like" 或 "dislike"
+
+        // 2. 找消息
+        com.example.chat.common.model.Message msg = DataCenter.MSG_HISTORY.get(msgId);
+        if (msg == null) return;
+
+        // 3. 获取该类型的点赞列表 (如果没有就创建)
+        // computeIfAbsent 保证线程安全
+        java.util.Set<String> users = msg.getReactions().computeIfAbsent(reactType, k -> java.util.concurrent.ConcurrentHashMap.newKeySet());
+
+        // 4. 核心逻辑：Toggle (有点就取消，没点就加)
+        boolean isAdd = false;
+        if (users.contains(username)) {
+            users.remove(username); // 取消
+            isAdd = false;
+        } else {
+            users.add(username);    // 添加
+            isAdd = true;
+        }
+
+        // 5. 准备要广播的数据 (使用显式 Map，解决 final 报错)
+        java.util.Map<String, Object> respData = new java.util.HashMap<>();
+        respData.put("msgId", msgId);
+        respData.put("reactType", reactType);
+        respData.put("operator", username);
+        respData.put("isAdd", isAdd);       // 这里直接把变量放进去，不会报错
+        respData.put("count", users.size());
+
+        // 6. 构造响应包
+        WsResponse resp = WsResponse.builder()
+                .type("EVENT_MSG_REACT")
+                .data(respData)
+                .build();
+
+        // 7. 广播 (这里简单全员广播，为了让所有人看到点赞数变化)
+        DataCenter.ONLINE_USERS.values().forEach(s -> sendJson(s, resp));
+    }
+    private void handleGetHistory(WebSocketSession session, WsRequest request) {
+        String username = (String) session.getAttributes().get("username");
+
+        // 获取游标 (如果没有传，说明是第一次加载，取当前时间)
+        long beforeTime = request.getParams().has("beforeTime")
+                ? request.getParams().get("beforeTime").asLong()
+                : System.currentTimeMillis();
+
+        // Stream 流式处理 (低效但能用的方案)
+        List<Message> history = DataCenter.MSG_HISTORY.values().stream()
+                // 1. 权限过滤: 只看群聊 或 我参与的私聊
+                .filter(msg -> msg.isGroup() || msg.getFromUser().equals(username) || msg.getToUser().equals(username))
+                // 2. 时间过滤: 必须早于游标时间
+                .filter(msg -> msg.getTimestamp() < beforeTime)
+                // 3. 排序: 按时间倒序 (离现在最近的在前，方便截取)
+                .sorted((m1, m2) -> m2.getTimestamp().compareTo(m1.getTimestamp()))
+                // 4. 分页: 取 20 条
+                .limit(20)
+                // 5. 再次排序: 转回正序 (方便前端渲染: 旧在上，新在下)
+                .sorted(java.util.Comparator.comparing(Message::getTimestamp))
+                .collect(java.util.stream.Collectors.toList());
+
+        WsResponse resp = WsResponse.builder()
+                .type("HISTORY_LIST")
+                .data(history)
+                .build();
+
+        sendJson(session, resp);
+    }
     /**
      * 管理员功能：禁言
      * Params: { "targetUser": "Tom", "duration": 60 } (单位秒)
