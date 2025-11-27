@@ -95,6 +95,12 @@ public class ChatHandler extends TextWebSocketHandler {
                 // 心跳包通常不需要回复，或者简单回个 pong
                 // 什么都不做也行，主要为了保持连接不断
                 break;
+            case "KICK_USER":
+                handleKickUser(session, request);
+                break;
+            case "MUTE_USER":
+                handleMuteUser(session, request);
+                break;
 
             default:
                 sendError(session, "未知指令: " + request.getAction());
@@ -173,6 +179,15 @@ public class ChatHandler extends TextWebSocketHandler {
         }
     }
     private void handleMessage(WebSocketSession session, WsRequest request) {
+        String fromUsername = (String) session.getAttributes().get("username");
+        User user = DataCenter.USERS.get(fromUsername);
+
+        // --- 核心修改：禁言检查 ---
+        if (user != null && user.isMuted()) {
+            long remaining = (user.getMuteEndTime() - System.currentTimeMillis()) / 1000;
+            sendError(session, "您处于禁言状态，剩余 " + remaining + " 秒");
+            return; // ⛔️ 直接阻断，不让发消息
+        }
         try {
             // 1. 既然已经登录了，我们可以直接从 Session 里拿发送者名字
             String fromUser = (String) session.getAttributes().get("username");
@@ -266,15 +281,82 @@ public class ChatHandler extends TextWebSocketHandler {
         }
     }
     private void handleGetOnline(WebSocketSession session) {
-        // 直接获取所有在线用户的名字集合
-        java.util.Set<String> users = DataCenter.ONLINE_USERS.keySet();
+        // 以前是: Set<String> users = ...
+        // 现在改成: 返回 List<User>
+        // 注意：因为 User 类加了 @JsonIgnore password，所以这里发过去是安全的
+
+        java.util.List<User> onlineUserList = new java.util.ArrayList<>();
+
+        for (String username : DataCenter.ONLINE_USERS.keySet()) {
+            User u = DataCenter.USERS.get(username);
+            if (u != null) {
+                onlineUserList.add(u);
+            }
+        }
 
         WsResponse response = WsResponse.builder()
-                .type("ONLINE_LIST") // 对应前端文档
-                .data(users)
+                .type("ONLINE_LIST")
+                .data(onlineUserList) // 前端会收到 [{username:"admin", role:"ADMIN"}, ...]
                 .build();
 
         sendJson(session, response);
+    }
+    /**
+     * 管理员功能：踢人
+     */
+    private void handleKickUser(WebSocketSession session, WsRequest request) {
+        if (!checkAdmin(session)) return; // 1. 检查权限
+
+        String targetUser = request.getParams().get("targetUser").asText();
+        WebSocketSession targetSession = DataCenter.ONLINE_USERS.get(targetUser);
+
+        if (targetSession != null) {
+            // 发送通知并断开
+            sendError(targetSession, "【系统通知】您已被管理员强制下线！");
+            try {
+                targetSession.close();
+            } catch (Exception e) { e.printStackTrace(); }
+
+            // 回复管理员
+            sendJson(session, WsResponse.builder().type("SYS_NOTICE").msg("已踢出 " + targetUser).build());
+        }
+    }
+
+    /**
+     * 管理员功能：禁言
+     * Params: { "targetUser": "Tom", "duration": 60 } (单位秒)
+     */
+    private void handleMuteUser(WebSocketSession session, WsRequest request) {
+        if (!checkAdmin(session)) return; // 1. 检查权限
+
+        String targetName = request.getParams().get("targetUser").asText();
+        long duration = request.getParams().get("duration").asLong(); // 禁言多少秒
+
+        User targetUser = DataCenter.USERS.get(targetName);
+        if (targetUser != null) {
+            // 设置禁言截止时间 = 当前时间 + 持续秒数 * 1000
+            targetUser.setMuteEndTime(System.currentTimeMillis() + (duration * 1000));
+
+            // 通知管理员
+            sendJson(session, WsResponse.builder().type("SYS_NOTICE").msg("已禁言 " + targetName).build());
+
+            // 通知被禁言的人
+            WebSocketSession targetSession = DataCenter.ONLINE_USERS.get(targetName);
+            if (targetSession != null) {
+                sendError(targetSession, "【系统通知】您被管理员禁言 " + duration + " 秒");
+            }
+        }
+    }
+
+    // 辅助方法：检查当前 Session 是否是管理员
+    private boolean checkAdmin(WebSocketSession session) {
+        String username = (String) session.getAttributes().get("username");
+        User user = DataCenter.USERS.get(username);
+        if (user == null || !user.isAdmin()) {
+            sendError(session, "权限不足：仅管理员可用");
+            return false;
+        }
+        return true;
     }
     /**
      * 核心辅助方法：给指定会话发送 JSON 数据

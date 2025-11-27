@@ -1,19 +1,41 @@
 package com.example.chat.common.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore; // 务必引入这个！
 import lombok.Data;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Data // Lombok 注解：自动生成 Getter/Setter/ToString
+@Data
 public class User {
     private String username;
-    private String avatar;
+
+    //  加 @JsonIgnore，这样 User 对象发给前端时，password 字段会自动消失，防止泄露！
+    @JsonIgnore
     private String password;
-    // 使用线程安全的 Set 存储好友和屏蔽列表
+
+    private String avatar;
+
+    // 新增角色 (ADMIN / USER)
+    private String role = "USER";
+
+    // 禁言结束时间戳 (0 表示没被禁言)
+    private long muteEndTime = 0;
+
+    // 原有的好友/屏蔽列表
     private Set<String> friends = ConcurrentHashMap.newKeySet();
     private Set<String> blockList = ConcurrentHashMap.newKeySet();
 
     public User(String username) {
         this.username = username;
+    }
+
+    // 辅助方法：是否是管理员
+    public boolean isAdmin() {
+        return "ADMIN".equals(this.role);
+    }
+
+    // 辅助方法：是否处于禁言状态
+    public boolean isMuted() {
+        return System.currentTimeMillis() < this.muteEndTime;
     }
 }
