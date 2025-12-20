@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天系统测试客户端</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .panel {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .panel h3 {
+            margin-top: 0;
+        }
+        .input-group {
+            margin-bottom: 10px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input, .input-group textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .input-group textarea {
+            height: 100px;
+            font-family: monospace;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button.disconnect {
+            background-color: #f44336;
+        }
+        button.disconnect:hover {
+            background-color: #da190b;
+        }
+        .status {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 3px;
+        }
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .message {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+            background-color: white;
+        }
+        .message.error {
+            border-left-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        .message.success {
+            border-left-color: #28a745;
+            background-color: #f0fff4;
+        }
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .quick-actions button {
+            flex: 1;
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <h1>聊天系统 WebSocket 测试客户端</h1>
+    
+    <div class="container">
+        <div class="panel">
+            <h3>连接控制</h3>
+            <div class="input-group">
+                <label>WebSocket URL:</label>
+                <input type="text" id="wsUrl" value="ws://localhost:8080/chat">
+            </div>
+            <button onclick="connect()">连接</button>
+            <button class="disconnect" onclick="disconnect()">断开</button>
+            <div id="status" class="status disconnected">未连接</div>
+        </div>
+
+        <div class="panel">
+            <h3>用户信息</h3>
+            <div class="input-group">
+                <label>用户名:</label>
+                <input type="text" id="username" value="alice" placeholder="输入用户名">
+            </div>
+            <div class="input-group">
+                <label>密码:</label>
+                <input type="password" id="password" value="123456" placeholder="输入密码">
+            </div>
+            <button onclick="login()">登录</button>
+            <div id="userInfo" style="margin-top: 10px; padding: 10px; background-color: #e9ecef; border-radius: 3px;">
+                未登录
+            </div>
+        </div>
+    </div>
+
+    <div class="panel" style="margin-top: 20px;">
+        <h3>快速操作</h3>
+        <div class="quick-actions">
+            <button onclick="sendHeartbeat()">发送心跳</button>
+            <button onclick="getOnlineUsers()">获取在线用户</button>
+            <button onclick="showSendPrivateForm()">发送私聊</button>
+            <button onclick="showGetHistoryForm()">获取历史</button>
+        </div>
+    </div>
+
+    <div class="panel" style="margin-top: 20px;">
+        <h3>发送自定义消息</h3>
+        <div class="input-group">
+            <label>Action:</label>
+            <input type="text" id="action" value="SEND_PRIVATE" placeholder="如: SEND_PRIVATE, GET_HISTORY">
+        </div>
+        <div class="input-group">
+            <label>Params (JSON):</label>
+            <textarea id="params" placeholder='{"targetUser": "bob", "content": "Hello!"}'></textarea>
+        </div>
+        <button onclick="sendCustomMessage()">发送消息</button>
+    </div>
+
+    <div class="panel" style="margin-top: 20px;">
+        <h3>消息日志</h3>
+        <button onclick="clearMessages()">清空日志</button>
+        <div id="messages" class="messages"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentUser = null;
+
+        function connect() {
+            const url = document.getElementById('wsUrl').value;
+            ws = new WebSocket(url);
+
+            ws.onopen = () => {
+                updateStatus('connected', '已连接');
+                addMessage('系统', '连接已建立', 'success');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    addMessage('服务端', JSON.stringify(data, null, 2), data.type === 'ERROR' ? 'error' : 'success');
+                    
+                    // 处理登录响应
+                    if (data.type === 'LOGIN_RESP' && data.data) {
+                        currentUser = data.data;
+                        document.getElementById('userInfo').innerHTML = 
+                            `已登录: ${data.data.username} (角色: ${data.data.role || 'USER'})`;
+                    }
+                } catch (e) {
+                    addMessage('服务端', event.data, 'error');
+                }
+            };
+
+            ws.onerror = (error) => {
+                addMessage('系统', '连接错误: ' + error, 'error');
+            };
+
+            ws.onclose = () => {
+                updateStatus('disconnected', '已断开');
+                addMessage('系统', '连接已关闭', 'error');
+                currentUser = null;
+                document.getElementById('userInfo').innerHTML = '未登录';
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            sendMessage({
+                action: 'LOGIN',
+                params: {
+                    username: username,
+                    password: password
+                }
+            });
+        }
+
+        function sendHeartbeat() {
+            sendMessage({
+                action: 'HEARTBEAT',
+                params: {}
+            });
+        }
+
+        function getOnlineUsers() {
+            sendMessage({
+                action: 'GET_ONLINE',
+                params: {}
+            });
+        }
+
+        function showSendPrivateForm() {
+            const targetUser = prompt('请输入接收者用户名:', 'bob');
+            if (!targetUser) return;
+            
+            const content = prompt('请输入消息内容:', 'Hello!');
+            if (!content) return;
+
+            sendMessage({
+                action: 'SEND_PRIVATE',
+                params: {
+                    targetUser: targetUser,
+                    content: content
+                }
+            });
+        }
+
+        function showGetHistoryForm() {
+            const targetUser = prompt('请输入目标用户名（获取与该用户的聊天历史）:', 'bob');
+            if (!targetUser) return;
+
+            sendMessage({
+                action: 'GET_HISTORY',
+                params: {
+                    targetUser: targetUser,
+                    limit: 20
+                }
+            });
+        }
+
+        function sendCustomMessage() {
+            const action = document.getElementById('action').value;
+            const paramsText = document.getElementById('params').value;
+            
+            try {
+                const params = paramsText ? JSON.parse(paramsText) : {};
+                sendMessage({
+                    action: action,
+                    params: params
+                });
+            } catch (e) {
+                alert('Params JSON 格式错误: ' + e.message);
+            }
+        }
+
+        function sendMessage(message) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('请先连接 WebSocket');
+                return;
+            }
+            
+            const json = JSON.stringify(message);
+            ws.send(json);
+            addMessage('客户端', json, '');
+        }
+
+        function updateStatus(status, text) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status ' + status;
+            statusEl.textContent = text;
+        }
+
+        function addMessage(from, message, type) {
+            const messagesEl = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message ' + (type || '');
+            messageEl.innerHTML = `<strong>${from}:</strong><br><pre>${message}</pre>`;
+            messagesEl.appendChild(messageEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
+

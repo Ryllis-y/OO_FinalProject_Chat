@@ -1,0 +1,9 @@
+"filename", "language", "Markdown", "XML", "Java", "comment", "blank", "total"
+"/Users/ryllis/IdeaProjects/chat/FIX_JAVA_VERSION.md", "Markdown", 71, 0, 0, 0, 35, 106
+"/Users/ryllis/IdeaProjects/chat/FIX_LOMBOK_ERROR.md", "Markdown", 96, 0, 0, 0, 44, 140
+"/Users/ryllis/IdeaProjects/chat/INSTALL_JAVA21.md", "Markdown", 125, 0, 0, 0, 66, 191
+"/Users/ryllis/IdeaProjects/chat/README_RUN.md", "Markdown", 86, 0, 0, 0, 35, 121
+"/Users/ryllis/IdeaProjects/chat/pom.xml", "XML", 0, -2, 0, 0, 0, -2
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/common/packet/WsResponse.java", "Java", 0, 0, 0, 0, 2, 2
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/ChatHandler.java", "Java", 0, 0, -18, -16, -1, -35
+"Total", "-", 378, -2, -18, -16, 181, 523
