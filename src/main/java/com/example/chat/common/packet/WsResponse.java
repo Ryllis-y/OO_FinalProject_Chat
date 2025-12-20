@@ -18,3 +18,4 @@ public class WsResponse {
         return WsResponse.builder().type("ERROR").code(500).msg(msg).build();
     }
 }
+
