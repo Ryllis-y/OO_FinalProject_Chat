@@ -77,10 +77,12 @@ public class Recall_MsgHandler extends BaseActionHandler {
                 return;
             }
             
-            // 4. 广播撤回事件
+            // 4. 广播撤回事件（包括操作者自己，这样所有人都能收到更新）
             broadcastRecallEvent(message, operator);
             
-            // 5. 返回成功响应给操作者
+            // 5. 返回成功响应给操作者（这里也发送撤回事件，确保操作者能立即看到更新）
+            // 注意：操作者也会通过 broadcastRecallEvent 收到事件，所以这里也可以不发送
+            // 但为了保持一致性，我们还是发送成功响应
             ObjectNode responseData = objectMapper.createObjectNode();
             responseData.put("msgId", msgId);
             responseData.put("message", "消息撤回成功");
@@ -203,25 +205,17 @@ public class Recall_MsgHandler extends BaseActionHandler {
     private Set<String> determineRecallEventReceivers(Message recalledMessage, String operator) {
         Set<String> receivers = ConcurrentHashMap.newKeySet();
         
-        // 包括消息的发送者（如果发送者不是操作者）
-        if (!recalledMessage.getFromUser().equals(operator)) {
-            receivers.add(recalledMessage.getFromUser());
-        }
-        
         if (recalledMessage.isGroup()) {
-            // 群聊：广播给所有在线群成员
+            // 群聊：广播给所有在线群成员（包括操作者自己）
             Group group = DataCenter.GROUPS.get(recalledMessage.getToUser());
             if (group != null) {
                 receivers.addAll(group.getMembers());
             }
         } else {
-            // 私聊：包括发送者和接收者
+            // 私聊：包括发送者和接收者（包括操作者自己）
             receivers.add(recalledMessage.getFromUser());
             receivers.add(recalledMessage.getToUser());
         }
-        
-        // 移除操作者（避免重复通知，因为操作者已经通过成功响应知道了）
-        receivers.remove(operator);
         
         // 确保接收者在线
         receivers.removeIf(user -> !DataCenter.ONLINE_USERS.containsKey(user));

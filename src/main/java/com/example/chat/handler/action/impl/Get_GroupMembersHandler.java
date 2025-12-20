@@ -61,7 +61,12 @@ public class Get_GroupMembersHandler extends BaseActionHandler {
             responseData.put("admins", group.getAdmins());
             responseData.put("memberCount", group.getMembers().size());
             
-            sendSuccess(session, responseData);
+            // 使用 GROUP_MEMBERS_RESP 类型，而不是 SUCCESS
+            com.example.chat.common.packet.WsResponse response = com.example.chat.common.packet.WsResponse.builder()
+                    .type("GROUP_MEMBERS_RESP")
+                    .data(responseData)
+                    .build();
+            sendResponse(session, response);
             
             System.out.println("用户 " + userId + " 获取群组 " + group.getGroupName() + " 的成员列表");
             

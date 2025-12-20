@@ -1,6 +1,7 @@
 package com.example.chat.handler.action.impl;
 
 import com.example.chat.common.packet.WsRequest;
+import com.example.chat.common.model.Group;
 import com.example.chat.common.model.Message;
 import com.example.chat.handler.action.BaseActionHandler;
 import com.example.chat.repository.DataCenter;
@@ -33,30 +34,63 @@ public class Get_HistoryHandler extends BaseActionHandler {
             Long beforeTime = params != null && params.has("beforeTime")
                     ? params.get("beforeTime").asLong()
                     : null;
+            
+            // 获取目标（群组ID或私聊用户ID）
+            String targetGroupId = params != null && params.has("groupId")
+                    ? params.get("groupId").asText()
+                    : null;
+            String targetUser = params != null && params.has("targetUser")
+                    ? params.get("targetUser").asText()
+                    : null;
 
-            // 收集所有相关消息
+            // 收集相关消息
             List<Message> allMessages = new ArrayList<>();
 
-            // 1. 私聊消息（自己发送或接收的）
-            DataCenter.MSG_HISTORY.values().forEach(msg -> {
-                if (!msg.isGroup()) {
-                    if (msg.getFromUser().equals(currentUser) ||
-                            msg.getToUser().equals(currentUser)) {
-                        allMessages.add(msg);
-                    }
-                }
-            });
-
-            // 2. 群聊消息（自己所在的群组）
-            DataCenter.GROUPS.forEach((groupId, group) -> {
-                if (group.getMembers().contains(currentUser)) {
+            if (targetGroupId != null) {
+                // 获取指定群组的历史消息
+                Group group = DataCenter.GROUPS.get(targetGroupId);
+                if (group != null && group.getMembers().contains(currentUser)) {
                     DataCenter.MSG_HISTORY.values().forEach(msg -> {
-                        if (msg.isGroup() && msg.getToUser().equals(groupId)) {
+                        if (msg.isGroup() && msg.getToUser().equals(targetGroupId)) {
                             allMessages.add(msg);
                         }
                     });
                 }
-            });
+            } else if (targetUser != null) {
+                // 获取指定私聊用户的历史消息
+                DataCenter.MSG_HISTORY.values().forEach(msg -> {
+                    if (!msg.isGroup()) {
+                        // 确保消息是当前用户和目标用户之间的
+                        boolean isFromCurrentToTarget = msg.getFromUser().equals(currentUser) && msg.getToUser().equals(targetUser);
+                        boolean isFromTargetToCurrent = msg.getFromUser().equals(targetUser) && msg.getToUser().equals(currentUser);
+                        if (isFromCurrentToTarget || isFromTargetToCurrent) {
+                            allMessages.add(msg);
+                        }
+                    }
+                });
+            } else {
+                // 如果没有指定目标，返回所有相关消息（兼容旧逻辑）
+                // 1. 私聊消息（自己发送或接收的）
+                DataCenter.MSG_HISTORY.values().forEach(msg -> {
+                    if (!msg.isGroup()) {
+                        if (msg.getFromUser().equals(currentUser) ||
+                                msg.getToUser().equals(currentUser)) {
+                            allMessages.add(msg);
+                        }
+                    }
+                });
+
+                // 2. 群聊消息（自己所在的群组）
+                DataCenter.GROUPS.forEach((groupId, group) -> {
+                    if (group.getMembers().contains(currentUser)) {
+                        DataCenter.MSG_HISTORY.values().forEach(msg -> {
+                            if (msg.isGroup() && msg.getToUser().equals(groupId)) {
+                                allMessages.add(msg);
+                            }
+                        });
+                    }
+                });
+            }
 
             // 过滤、排序、分页
             List<Message> filtered = allMessages.stream()

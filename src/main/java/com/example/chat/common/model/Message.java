@@ -1,5 +1,6 @@
 package com.example.chat.common.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,6 +15,7 @@ public class Message {
     private String msgId;
     private String fromUser;
     private String toUser;     // 私聊是用户名，群聊是GroupId
+    @JsonProperty("isGroup")   // 确保JSON字段名为 isGroup
     private boolean isGroup;   // 是否群聊
     private String content;
     private Long timestamp;

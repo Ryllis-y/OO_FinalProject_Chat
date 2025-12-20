@@ -35,4 +35,8 @@ public interface UserService {
 
     boolean muteUser(String adminId, String targetUserId, long durationMillis);
 
+    // 群聊成员管理
+    boolean muteGroupUser(String operator, String groupId, String targetUserId, long durationMillis);
+    boolean kickGroupUser(String operator, String groupId, String targetUserId);
+
 }

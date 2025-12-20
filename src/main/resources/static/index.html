@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 登录界面 -->
+    <div id="loginPanel" class="login-panel">
+        <div class="login-container">
+            <h1>欢迎使用聊天系统</h1>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="username">用户名</label>
+                    <input type="text" id="username" required placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" required placeholder="请输入密码">
+                </div>
+                <button type="submit" class="btn-primary">登录/注册</button>
+            </form>
+            <div id="loginError" class="error-message"></div>
+        </div>
+    </div>
+
+    <!-- 主聊天界面 -->
+    <div id="chatPanel" class="chat-panel hidden">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+            <!-- 用户信息 -->
+            <div class="user-info">
+                <div class="user-avatar">
+                    <span id="currentUserInitial">U</span>
+                </div>
+                <div class="user-details">
+                    <div class="user-name" id="currentUserName">用户</div>
+                    <div class="user-role" id="currentUserRole"></div>
+                </div>
+                <button id="logoutBtn" class="btn-icon" title="退出登录">🚪</button>
+            </div>
+
+            <!-- 标签切换 -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="contacts">联系人</button>
+                <button class="tab-btn" data-tab="groups">群组</button>
+                <button class="tab-btn" data-tab="online">在线用户</button>
+            </div>
+
+            <!-- 搜索框 -->
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索联系人/群组">
+            </div>
+
+            <!-- 联系人列表 -->
+            <div id="contactsList" class="contact-list tab-content active">
+                <!-- 动态生成 -->
+            </div>
+
+            <!-- 群组列表 -->
+            <div id="groupsList" class="contact-list tab-content">
+                <!-- 动态生成 -->
+                <button id="createGroupBtn" class="btn-create-group">+ 创建群组</button>
+            </div>
+
+            <!-- 在线用户列表 -->
+            <div id="onlineUsersList" class="contact-list tab-content">
+                <!-- 动态生成 -->
+            </div>
+        </div>
+
+        <!-- 中间聊天区域 -->
+        <div class="chat-main">
+            <!-- 聊天头部 -->
+            <div class="chat-header">
+                <div class="chat-target-info">
+                    <div class="target-avatar">
+                        <span id="targetAvatar">?</span>
+                    </div>
+                    <div class="target-details">
+                        <div class="target-name" id="targetName">选择一个聊天对象</div>
+                        <div class="target-status" id="targetStatus"></div>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button id="viewMembersBtn" class="btn-icon hidden" title="查看成员">👥</button>
+                    <button id="groupInfoBtn" class="btn-icon hidden" title="群组信息">ℹ️</button>
+                </div>
+            </div>
+
+            <!-- 消息列表 -->
+            <div id="messageList" class="message-list">
+                <div class="empty-state">
+                    <p>选择一个聊天对象开始聊天</p>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="chat-input-area">
+                <div class="input-toolbar">
+                    <button id="atBtn" class="btn-icon hidden" title="@提醒">@</button>
+                </div>
+                <textarea id="messageInput" placeholder="输入消息..." rows="3"></textarea>
+                <div class="input-actions">
+                    <span id="inputHint" class="input-hint"></span>
+                    <button id="sendBtn" class="btn-send">发送</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧信息面板（可选） -->
+        <div id="infoPanel" class="info-panel hidden">
+            <div class="info-header">
+                <h3 id="infoTitle">详细信息</h3>
+                <button id="closeInfoBtn" class="btn-icon">×</button>
+            </div>
+            <div id="infoContent" class="info-content">
+                <!-- 动态内容 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建群组弹窗 -->
+    <div id="createGroupModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>创建群组</h3>
+                <button class="btn-close" onclick="closeCreateGroupModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>群组名称</label>
+                    <input type="text" id="groupNameInput" placeholder="请输入群组名称">
+                </div>
+                <div class="form-group">
+                    <label>初始成员（可选，用逗号分隔用户名）</label>
+                    <input type="text" id="initialMembersInput" placeholder="例如：bob,charlie">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeCreateGroupModal()">取消</button>
+                <button class="btn-primary" onclick="createGroup()">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加入群组弹窗 -->
+    <div id="joinGroupModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>加入群组</h3>
+                <button class="btn-close" onclick="closeJoinGroupModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>群组ID</label>
+                    <input type="text" id="joinGroupIdInput" placeholder="请输入群组ID">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeJoinGroupModal()">取消</button>
+                <button class="btn-primary" onclick="joinGroup()">加入</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+

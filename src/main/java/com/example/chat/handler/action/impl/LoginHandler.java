@@ -83,8 +83,54 @@ public class LoginHandler extends BaseActionHandler {
             
             System.out.println("用户登录成功: " + username + ", 角色: " + user.getRole());
             
+            // 7. 广播在线用户列表更新给所有在线用户
+            broadcastOnlineUsersUpdate();
+            
         } catch (Exception e) {
             sendError(session, "登录失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * 广播在线用户列表更新给所有在线用户
+     */
+    private void broadcastOnlineUsersUpdate() {
+        try {
+            // 获取所有在线用户
+            java.util.List<User> onlineUserList = new java.util.ArrayList<>();
+            for (String username : DataCenter.ONLINE_USERS.keySet()) {
+                User u = DataCenter.USERS.get(username);
+                if (u != null) {
+                    onlineUserList.add(u);
+                }
+            }
+            
+            // 构建更新响应
+            WsResponse updateResponse = WsResponse.builder()
+                    .type("ONLINE_LIST")
+                    .data(onlineUserList)
+                    .build();
+            
+            String json = objectMapper.writeValueAsString(updateResponse);
+            
+            // 广播给所有在线用户
+            for (WebSocketSession onlineSession : DataCenter.ONLINE_USERS.values()) {
+                if (onlineSession != null && onlineSession.isOpen()) {
+                    try {
+                        synchronized (onlineSession) {
+                            onlineSession.sendMessage(new TextMessage(json));
+                        }
+                    } catch (Exception e) {
+                        System.err.println("广播在线用户列表更新失败: " + e.getMessage());
+                    }
+                }
+            }
+            
+            System.out.println("已广播在线用户列表更新，当前在线用户数: " + onlineUserList.size());
+            
+        } catch (Exception e) {
+            System.err.println("广播在线用户列表更新时出错: " + e.getMessage());
             e.printStackTrace();
         }
     }

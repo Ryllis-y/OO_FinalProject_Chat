@@ -70,6 +70,9 @@ public class Send_PrivateHandler extends BaseActionHandler {
             // 发送给接收者
             sendToUser(toUser, message);
             
+            // 也发送给发送者（让发送者能看到自己发送的消息）
+            sendToUser(fromUser, message);
+            
             // 发送回执给发送者
             sendSuccess(session, message);
             

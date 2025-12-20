@@ -136,6 +136,48 @@ public class ChatHandler extends TextWebSocketHandler {
         if (username != null) {
             DataCenter.ONLINE_USERS.remove(username);
             System.out.println("用户下线: " + username);
+            // 广播在线用户列表更新给所有在线用户
+            broadcastOnlineUsersUpdate();
+        }
+    }
+    
+    /**
+     * 广播在线用户列表更新给所有在线用户
+     */
+    private void broadcastOnlineUsersUpdate() {
+        try {
+            // 获取所有在线用户
+            java.util.List<User> onlineUserList = new java.util.ArrayList<>();
+            for (String username : DataCenter.ONLINE_USERS.keySet()) {
+                User u = DataCenter.USERS.get(username);
+                if (u != null) {
+                    onlineUserList.add(u);
+                }
+            }
+            
+            // 构建更新响应
+            WsResponse updateResponse = WsResponse.builder()
+                    .type("ONLINE_LIST")
+                    .data(onlineUserList)
+                    .build();
+            
+            String json = jsonMapper.writeValueAsString(updateResponse);
+            
+            // 广播给所有在线用户
+            for (WebSocketSession onlineSession : DataCenter.ONLINE_USERS.values()) {
+                if (onlineSession != null && onlineSession.isOpen()) {
+                    try {
+                        synchronized (onlineSession) {
+                            onlineSession.sendMessage(new TextMessage(json));
+                        }
+                    } catch (Exception e) {
+                        System.err.println("广播在线用户列表更新失败: " + e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("广播在线用户列表更新时出错: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     /**

@@ -4,10 +4,12 @@ import com.example.chat.common.packet.WsRequest;
 import com.example.chat.common.model.Group;
 import com.example.chat.common.packet.WsResponse;
 import com.example.chat.handler.action.BaseActionHandler;
+import com.example.chat.repository.DataCenter;
 import com.example.chat.service.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.ArrayList;
@@ -59,7 +61,7 @@ public class Create_GroupHandler extends BaseActionHandler {
             // 调用 UserService 创建群组
             Group group = userService.createGroup(groupName, owner, initialMembers);
             
-            // 构建响应
+            // 构建响应给创建者
             WsResponse response = WsResponse.builder()
                     .type("GROUP_CREATED")
                     .data(group)
@@ -67,12 +69,51 @@ public class Create_GroupHandler extends BaseActionHandler {
             
             sendResponse(session, response);
             
+            // 通知所有成员（除了创建者）更新群组列表
+            // 注意：group.getMembers()包含了owner和所有initialMembers
+            broadcastGroupUpdateToMembers(group, owner);
+            
             System.out.println("用户 " + owner + " 创建群组: " + groupName + " (ID: " + group.getGroupId() + ")");
             
         } catch (IllegalArgumentException e) {
             sendError(session, e.getMessage());
         } catch (Exception e) {
             sendError(session, "创建群组失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * 广播群组更新给初始成员（除了创建者）
+     */
+    private void broadcastGroupUpdateToMembers(Group group, String owner) {
+        try {
+            // 构建群组更新响应
+            WsResponse updateResponse = WsResponse.builder()
+                    .type("GROUP_JOINED")
+                    .data(group)
+                    .build();
+            
+            String json = objectMapper.writeValueAsString(updateResponse);
+            
+            // 通知所有初始成员（除了创建者）
+            for (String member : group.getMembers()) {
+                if (!member.equals(owner)) {
+                    WebSocketSession memberSession = DataCenter.ONLINE_USERS.get(member);
+                    if (memberSession != null && memberSession.isOpen()) {
+                        try {
+                            synchronized (memberSession) {
+                                memberSession.sendMessage(new TextMessage(json));
+                            }
+                            System.out.println("通知用户 " + member + " 已加入群组: " + group.getGroupName());
+                        } catch (Exception e) {
+                            System.err.println("通知用户 " + member + " 群组更新失败: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("广播群组更新失败: " + e.getMessage());
             e.printStackTrace();
         }
     }

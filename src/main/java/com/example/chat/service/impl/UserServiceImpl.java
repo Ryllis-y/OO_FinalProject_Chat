@@ -114,6 +114,10 @@ public class UserServiceImpl implements UserService {
         if(!group.getMembers().contains(targetUser)) {
             return false;
         }
+        // 不能将自己设置为管理员（已经是群主）
+        if(targetUser.equals(operator)) {
+            return false;
+        }
         group.getAdmins().add(targetUser);
         return true;
     }
@@ -202,7 +206,7 @@ public class UserServiceImpl implements UserService {
 
         // 双向添加好友
         to.getFriends().add(fromUser);
-        from.getFriends().add(toUser);
+        from.getFriends().add(fromUser);
 
         // 移除申请
         to.getFriendRequests().remove(fromUser);
@@ -236,6 +240,10 @@ public class UserServiceImpl implements UserService {
         DataCenter.ONLINE_USERS.remove(targetUserId);
         return true;
     }
+
+    /**
+     * 系统管理员禁言用户（全局禁言）
+     */
     @Override
     public boolean muteUser(String adminId, String targetUserId, long durationMillis) {
         User admin = DataCenter.USERS.get(adminId);
@@ -247,6 +255,89 @@ public class UserServiceImpl implements UserService {
         if (target == null) return false;
 
         target.setMuteEndTime(System.currentTimeMillis() + durationMillis);
+        return true;
+    }
+
+    /**
+     * 群聊禁言用户（仅在群内禁言）
+     */
+    @Override
+    public boolean muteGroupUser(String operator, String groupId, String targetUserId, long durationMillis) {
+        Group group = DataCenter.GROUPS.get(groupId);
+        if (group == null) {
+            throw new IllegalArgumentException("群组不存在");
+        }
+
+        // 检查操作者权限：必须是群主或管理员
+        boolean isOperator = group.getOwner().equals(operator);
+        boolean isAdmin = group.getAdmins().contains(operator);
+        if (!isOperator && !isAdmin) {
+            throw new SecurityException("无权限操作：只有群主或管理员可以禁言");
+        }
+
+        // 不能禁言群主
+        if (group.getOwner().equals(targetUserId)) {
+            throw new SecurityException("不能禁言群主");
+        }
+
+        // 管理员不能禁言其他管理员（只有群主可以）
+        if (group.getAdmins().contains(targetUserId) && !isOperator) {
+            throw new SecurityException("管理员不能禁言其他管理员");
+        }
+
+        // 检查目标用户是否在群中
+        if (!group.getMembers().contains(targetUserId)) {
+            throw new IllegalArgumentException("目标用户不在群组中");
+        }
+
+        // 获取用户并设置群内禁言时间（这里简化处理，使用全局禁言字段）
+        // 实际项目中应该使用群组特定的禁言记录
+        User target = DataCenter.USERS.get(targetUserId);
+        if (target == null) {
+            throw new IllegalArgumentException("目标用户不存在");
+        }
+
+        target.setMuteEndTime(System.currentTimeMillis() + durationMillis);
+        return true;
+    }
+
+    /**
+     * 将用户踢出群聊
+     */
+    @Override
+    public boolean kickGroupUser(String operator, String groupId, String targetUserId) {
+        Group group = DataCenter.GROUPS.get(groupId);
+        if (group == null) {
+            throw new IllegalArgumentException("群组不存在");
+        }
+
+        // 检查操作者权限：必须是群主或管理员
+        boolean isOperator = group.getOwner().equals(operator);
+        boolean isAdmin = group.getAdmins().contains(operator);
+        if (!isOperator && !isAdmin) {
+            throw new SecurityException("无权限操作：只有群主或管理员可以踢出成员");
+        }
+
+        // 不能踢出群主
+        if (group.getOwner().equals(targetUserId)) {
+            throw new SecurityException("不能踢出群主");
+        }
+
+        // 管理员不能踢出其他管理员（只有群主可以）
+        if (group.getAdmins().contains(targetUserId) && !isOperator) {
+            throw new SecurityException("管理员不能踢出其他管理员");
+        }
+
+        // 检查目标用户是否在群中
+        if (!group.getMembers().contains(targetUserId)) {
+            throw new IllegalArgumentException("目标用户不在群组中");
+        }
+
+        // 从群组中移除用户
+        group.getMembers().remove(targetUserId);
+        // 如果该用户是管理员，也要从管理员列表中移除
+        group.getAdmins().remove(targetUserId);
+
         return true;
     }
 

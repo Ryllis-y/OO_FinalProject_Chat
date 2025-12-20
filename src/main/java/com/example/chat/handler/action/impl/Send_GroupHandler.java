@@ -78,11 +78,8 @@ public class Send_GroupHandler extends BaseActionHandler {
             // 创建并保存消息
             Message message = messageService.processAndSaveMsg(fromUser, groupId, content, true, atUsers);
             
-            // 发送给所有在线群成员
-            sendToGroupMembers(group, message, fromUser);
-            
-            // 发送回执给发送者
-            sendSuccess(session, message);
+            // 发送给所有在线群成员（包括发送者自己，这样发送者也能立即看到自己的消息）
+            sendToGroupMembers(group, message);
             
             System.out.println("群聊消息: " + fromUser + " -> 群组[" + group.getGroupName() + "]: " + content);
             
@@ -93,24 +90,28 @@ public class Send_GroupHandler extends BaseActionHandler {
     }
     
     /**
-     * 发送消息给群组所有在线成员
+     * 发送消息给群组所有在线成员（包括发送者自己）
      */
-    private void sendToGroupMembers(Group group, Message message, String sender) {
+    private void sendToGroupMembers(Group group, Message message) {
         try {
             WsResponse response = WsResponse.builder()
                     .type("EVENT_CHAT_MSG")
                     .data(message)
                     .build();
             String json = objectMapper.writeValueAsString(response);
+            System.out.println("发送群聊消息 JSON: " + json);
+            System.out.println("消息对象 isGroup: " + message.isGroup() + ", groupId: " + message.getToUser());
             TextMessage textMessage = new TextMessage(json);
             
-            // 遍历群成员，发送给所有在线成员
+            // 遍历群成员，发送给所有在线成员（包括发送者自己）
             Set<String> sentTo = ConcurrentHashMap.newKeySet();
             for (String member : group.getMembers()) {
                 WebSocketSession memberSession = DataCenter.ONLINE_USERS.get(member);
                 if (memberSession != null && memberSession.isOpen()) {
                     try {
-                        memberSession.sendMessage(textMessage);
+                        synchronized (memberSession) {
+                            memberSession.sendMessage(textMessage);
+                        }
                         sentTo.add(member);
                     } catch (Exception e) {
                         System.err.println("发送消息给群成员失败: " + member + ", " + e.getMessage());
@@ -118,7 +119,7 @@ public class Send_GroupHandler extends BaseActionHandler {
                 }
             }
             
-            System.out.println("群消息已发送给 " + sentTo.size() + " 个在线成员");
+            System.out.println("群消息已发送给 " + sentTo.size() + " 个在线成员（包括发送者）");
             
         } catch (Exception e) {
             System.err.println("发送群消息失败: " + e.getMessage());

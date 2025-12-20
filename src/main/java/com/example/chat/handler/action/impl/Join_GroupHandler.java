@@ -2,6 +2,7 @@ package com.example.chat.handler.action.impl;
 
 import com.example.chat.common.packet.WsRequest;
 import com.example.chat.common.model.Group;
+import com.example.chat.common.packet.WsResponse;
 import com.example.chat.handler.action.BaseActionHandler;
 import com.example.chat.repository.DataCenter;
 import com.example.chat.service.UserService;
@@ -54,7 +55,14 @@ public class Join_GroupHandler extends BaseActionHandler {
             if (success) {
                 // 获取更新后的群组信息
                 Group updatedGroup = DataCenter.GROUPS.get(groupId);
-                sendSuccess(session, updatedGroup);
+                
+                // 发送成功响应给加入者
+                WsResponse response = WsResponse.builder()
+                        .type("GROUP_JOINED")
+                        .data(updatedGroup)
+                        .build();
+                sendResponse(session, response);
+                
                 System.out.println("用户 " + userId + " 加入群组: " + updatedGroup.getGroupName());
             } else {
                 sendError(session, "加入群组失败：您可能已经在该群组中");
