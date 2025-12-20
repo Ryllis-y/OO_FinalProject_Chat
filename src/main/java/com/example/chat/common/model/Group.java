@@ -11,4 +11,23 @@ public class Group {
     private String owner;
     // 线程安全的 List，适合读多写少
     private List<String> members = new CopyOnWriteArrayList<>();
+    private List<String> admins = new CopyOnWriteArrayList<>();
+
+    public boolean isOwner(String userId) {
+        return owner.equals(userId);
+    }
+
+    public boolean isAdmin(String userId) {
+        return isOwner(userId) || admins.contains(userId);
+    }
+
+    public List<String> getMembers() {
+        return members;
+    }
+
+    public List<String> getAdmins() {
+        return admins;
+    }
+
+
 }
