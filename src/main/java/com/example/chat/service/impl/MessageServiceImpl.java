@@ -3,6 +3,8 @@ package com.example.chat.service.impl;
 import com.example.chat.common.model.Message;
 import com.example.chat.repository.DataCenter;
 import com.example.chat.service.MessageService;
+import com.example.chat.util.SensitiveWordFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,9 +15,22 @@ public class MessageServiceImpl implements MessageService {
     // 撤回时间限制：2分钟（毫秒）
     private static final long RECALL_TIME_LIMIT = 2 * 60 * 1000;
     
+    @Autowired
+    private SensitiveWordFilter sensitiveWordFilter;
+    
     @Override
     public Message processAndSaveMsg(String fromUser, String toUser, String content, 
                                    boolean isGroup, List<String> atUsers) {
+        // 敏感词过滤：将敏感词替换为*
+        String filteredContent = sensitiveWordFilter.filter(content);
+        
+        // 如果内容被过滤，记录日志
+        if (!content.equals(filteredContent)) {
+            System.out.println("用户 " + fromUser + " 发送的消息包含敏感词，已过滤");
+            System.out.println("原始内容: " + content);
+            System.out.println("过滤后: " + filteredContent);
+        }
+        
         // 生成唯一ID
         String msgId = java.util.UUID.randomUUID().toString();
 
@@ -23,7 +38,7 @@ public class MessageServiceImpl implements MessageService {
                 .msgId(msgId)
                 .fromUser(fromUser)
                 .toUser(toUser)
-                .content(content)
+                .content(filteredContent)  // 使用过滤后的内容
                 .isGroup(isGroup)
                 .timestamp(System.currentTimeMillis())
                 .atUsers(atUsers)

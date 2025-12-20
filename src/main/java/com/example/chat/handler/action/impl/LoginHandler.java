@@ -52,7 +52,16 @@ public class LoginHandler extends BaseActionHandler {
                 return;
             }
             
-            // 2. 调用UserService登录
+            // 2. 在调用UserService之前，先获取旧session（用于多端顶号判断）
+            WebSocketSession oldSession = DataCenter.ONLINE_USERS.get(username);
+            boolean isSameSession = oldSession != null && oldSession.getId().equals(session.getId());
+            
+            // 3. 处理多端顶号（如果旧session存在且不是同一个session）
+            if (oldSession != null && oldSession.isOpen() && !isSameSession) {
+                handleMultiDeviceLogin(username, oldSession);
+            }
+            
+            // 4. 调用UserService登录（处理用户注册/验证密码，并绑定session）
             User user;
             try {
                 user = userService.login(username, password, session);
@@ -60,12 +69,6 @@ public class LoginHandler extends BaseActionHandler {
                 sendError(session, e.getMessage());
                 return;
             }
-            
-            // 3. 处理多端顶号
-            handleMultiDeviceLogin(username, session);
-            
-            // 4. 将用户加入在线列表
-            DataCenter.ONLINE_USERS.put(username, session);
             
             // 5. 在session中保存用户名，用于后续认证
             session.getAttributes().put("username", username);
@@ -87,30 +90,29 @@ public class LoginHandler extends BaseActionHandler {
     }
     
     /**
-     * 处理多端顶号
-     * 如果用户已在线，则关闭旧连接
+     * 处理多端顶号通知
+     * 向旧连接发送被顶号通知并关闭连接
+     * @param username 用户名
+     * @param oldSession 旧的WebSocket会话（将被关闭）
      */
-    private void handleMultiDeviceLogin(String username, WebSocketSession newSession) {
-        WebSocketSession oldSession = DataCenter.ONLINE_USERS.get(username);
-        
-        if (oldSession != null && oldSession.isOpen()) {
-            try {
-                // 发送被顶号通知
-                WsResponse kickOutResponse = WsResponse.builder()
-                        .type("SYS_NOTICE")
-                        .code(400)
-                        .msg("您的账号在另一地点登录，您已被强制下线")
-                        .build();
-                
-                String json = objectMapper.writeValueAsString(kickOutResponse);
-                oldSession.sendMessage(new TextMessage(json));
-                oldSession.close();
-                
-                System.out.println("用户被顶号: " + username);
-                
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    private void handleMultiDeviceLogin(String username, WebSocketSession oldSession) {
+        try {
+            // 发送被顶号通知
+            WsResponse kickOutResponse = WsResponse.builder()
+                    .type("SYS_NOTICE")
+                    .code(400)
+                    .msg("您的账号在另一地点登录，您已被强制下线")
+                    .build();
+            
+            String json = objectMapper.writeValueAsString(kickOutResponse);
+            oldSession.sendMessage(new TextMessage(json));
+            oldSession.close();
+            
+            System.out.println("用户被顶号: " + username + ", 旧session: " + oldSession.getId());
+            
+        } catch (IOException e) {
+            System.err.println("发送顶号通知失败: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

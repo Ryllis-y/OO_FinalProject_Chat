@@ -27,9 +27,17 @@ public class HandlerRegistry {
     public void init() {
         if (actionHandlerBeans != null) {
             actionHandlerBeans.forEach((beanName, handler) -> {
-                // 约定：Bean 名称以 Handler 结尾，去掉 Handler 就是 action 名称
-                // 例如：LoginHandler -> LOGIN
-                String action = beanName.replace("Handler", "").toUpperCase();
+                // 约定：如果 Bean 名称已经是 action 格式（全大写带下划线），直接使用
+                // 否则：Bean 名称以 Handler 结尾，去掉 Handler 就是 action 名称
+                // 例如：LoginHandler -> LOGIN, Send_PrivateHandler -> SEND_PRIVATE
+                String action;
+                if (beanName.equals(beanName.toUpperCase()) && beanName.contains("_")) {
+                    // Bean 名称已经是 action 格式（如 "GET_GROUP_MEMBERS"）
+                    action = beanName;
+                } else {
+                    // 常规命名：去掉 Handler 后缀，转大写
+                    action = beanName.replace("Handler", "").toUpperCase();
+                }
                 registerHandler(action, handler);
                 System.out.println("注册处理器: " + action + " -> " + beanName);
             });

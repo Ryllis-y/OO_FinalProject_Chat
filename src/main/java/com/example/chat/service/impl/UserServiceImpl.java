@@ -34,18 +34,8 @@ public class UserServiceImpl implements UserService {
             }
         }
 
-        // ===== 2. 多端顶号 =====
-        WebSocketSession oldSession = DataCenter.ONLINE_USERS.get(userId);
-        if (oldSession != null && oldSession.isOpen()) {
-            try {
-                oldSession.sendMessage(
-                        new TextMessage("账号在别处登录，你已被下线")
-                );
-                oldSession.close();
-            } catch (Exception ignored) {}
-        }
-
-        // ===== 3. 记录新会话 =====
+        // ===== 2. 记录新会话 =====
+        // 注意：多端顶号逻辑在 LoginHandler 中统一处理，这里只负责绑定session
         DataCenter.ONLINE_USERS.put(userId, session);
 
         return user;
@@ -260,5 +250,74 @@ public class UserServiceImpl implements UserService {
         return true;
     }
 
+    @Override
+    public boolean joinGroup(String groupId, String userId) {
+        if (groupId == null || userId == null || userId.isEmpty()) {
+            return false;
+        }
+        
+        Group group = DataCenter.GROUPS.get(groupId);
+        if (group == null) {
+            return false;
+        }
+        
+        // 检查用户是否已经在群中
+        if (group.getMembers().contains(userId)) {
+            return false; // 已经在群中
+        }
+        
+        // 检查用户是否存在
+        if (!DataCenter.USERS.containsKey(userId)) {
+            return false;
+        }
+        
+        group.getMembers().add(userId);
+        return true;
+    }
+
+    @Override
+    public boolean leaveGroup(String groupId, String userId) {
+        if (groupId == null || userId == null || userId.isEmpty()) {
+            return false;
+        }
+        
+        Group group = DataCenter.GROUPS.get(groupId);
+        if (group == null) {
+            return false;
+        }
+        
+        // 群主不能退群（需要先解散群）
+        if (group.getOwner().equals(userId)) {
+            return false;
+        }
+        
+        // 移除成员
+        boolean removed = group.getMembers().remove(userId);
+        
+        // 如果该用户是管理员，也要从管理员列表中移除
+        if (removed) {
+            group.getAdmins().remove(userId);
+        }
+        
+        return removed;
+    }
+
+    @Override
+    public List<Group> getUserGroups(String userId) {
+        List<Group> userGroups = new java.util.ArrayList<>();
+        
+        if (userId == null || userId.isEmpty()) {
+            return userGroups;
+        }
+        
+        // 遍历所有群组，找到用户所在的群
+        for (Group group : DataCenter.GROUPS.values()) {
+            if (group.getMembers().contains(userId)) {
+                userGroups.add(group);
+            }
+        }
+        
+        return userGroups;
+    }
 
 }

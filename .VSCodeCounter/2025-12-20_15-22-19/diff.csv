@@ -1,9 +1,0 @@
-"filename", "language", "Java", "Markdown", "XML", "comment", "blank", "total"
-"/Users/ryllis/IdeaProjects/chat/User.md", "Markdown", 0, 19, 0, 0, 18, 37
-"/Users/ryllis/IdeaProjects/chat/pom.xml", "XML", 0, 0, 3, 0, 2, 5
-"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/common/model/Group.java", "Java", 13, 0, 0, 0, 6, 19
-"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/common/model/User.java", "Java", 4, 0, 0, 1, 5, 10
-"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/LoginHandler.java", "Java", -19, 0, 0, -6, -6, -31
-"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/service/UserService.java", "Java", 13, 0, 0, 2, 8, 23
-"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/service/impl/UserServiceImpl.java", "Java", 182, 0, 0, 8, 33, 223
-"Total", "-", 193, 19, 3, 5, 66, 286

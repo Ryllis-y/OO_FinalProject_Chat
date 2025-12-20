@@ -14,6 +14,11 @@ public interface UserService {
     boolean setGroupAdmin(String operator, String groupId, String targetUser);
     boolean removeGroupAdmin(String operator, String groupId, String targetUser);
     boolean dissolveGroup(String groupId, String operator);
+    
+    // 群成员管理
+    boolean joinGroup(String groupId, String userId);
+    boolean leaveGroup(String groupId, String userId);
+    List<Group> getUserGroups(String userId);
 
     void updateAvatar(String userId, String newAvatar);
     void updateUsername(String userId, String newUsername);

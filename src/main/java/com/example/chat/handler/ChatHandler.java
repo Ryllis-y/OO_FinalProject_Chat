@@ -4,6 +4,7 @@ import com.example.chat.common.model.Message;
 import com.example.chat.common.model.User;
 import com.example.chat.common.packet.WsRequest;
 import com.example.chat.common.packet.WsResponse;
+import com.example.chat.handler.action.ActionHandler;
 import com.example.chat.repository.DataCenter;
 import com.example.chat.service.MessageService;
 import com.example.chat.service.UserService;
@@ -40,6 +41,10 @@ public class ChatHandler extends TextWebSocketHandler {
     // 3. 注入 JSON 工具
     @Autowired
     private ObjectMapper jsonMapper;
+    
+    // 4. 注入 Handler 注册表
+    @Autowired
+    private HandlerRegistry handlerRegistry;
 
     // --- 下面这三个方法是 WebSocket 的生命周期 ---
 
@@ -67,7 +72,19 @@ public class ChatHandler extends TextWebSocketHandler {
             return;
         }
 
-        // 3. 路由分发
+        // 3. 优先使用 HandlerRegistry 路由（新架构）
+        ActionHandler handler = handlerRegistry.getHandler(request.getAction());
+        if (handler != null) {
+            // 对于可能耗时的操作，使用线程池异步处理
+            if ("SEND_PRIVATE".equals(request.getAction()) || "SEND_GROUP".equals(request.getAction())) {
+                threadPool.execute(() -> handler.handle(session, request));
+            } else {
+                handler.handle(session, request);
+            }
+            return;
+        }
+
+        // 4. 兼容旧的路由逻辑（如果没有找到 Handler，使用旧方法）
         switch (request.getAction()) {
             case "LOGIN":
                 handleLogin(session, request);
@@ -77,8 +94,6 @@ public class ChatHandler extends TextWebSocketHandler {
             case "SEND_GROUP":
                 threadPool.execute(() -> handleMessage(session, request));
                 break;
-
-            // --- 新增以下 Case ---
 
             case "CREATE_GROUP":
                 handleCreateGroup(session, request);
