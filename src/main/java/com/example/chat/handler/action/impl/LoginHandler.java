@@ -55,7 +55,7 @@ public class LoginHandler extends BaseActionHandler {
             // 2. 调用UserService登录
             User user;
             try {
-                user = userService.login(username, password);
+                user = userService.login(username, password, session);
             } catch (IllegalArgumentException e) {
                 sendError(session, e.getMessage());
                 return;
