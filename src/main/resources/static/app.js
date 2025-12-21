@@ -1293,7 +1293,6 @@ class ChatApp {
             document.getElementById('atBtn').classList.add('hidden');
             document.getElementById('viewMembersBtn').classList.add('hidden');
             document.getElementById('deleteFriendBtn').classList.add('hidden');
-            document.getElementById('groupInfoBtn').classList.add('hidden');
             return;
         }
 
@@ -1311,7 +1310,6 @@ class ChatApp {
             // 隐藏群聊相关按钮，显示私聊相关按钮
             document.getElementById('atBtn').classList.add('hidden');
             document.getElementById('viewMembersBtn').classList.add('hidden');
-            document.getElementById('groupInfoBtn').classList.add('hidden');
             // 显示删除好友按钮（如果对方是好友）
             const deleteFriendBtn = document.getElementById('deleteFriendBtn');
             if (contact) {
@@ -1330,7 +1328,6 @@ class ChatApp {
             document.getElementById('viewMembersBtn').classList.remove('hidden');
             // 隐藏私聊相关按钮
             document.getElementById('deleteFriendBtn').classList.add('hidden');
-            document.getElementById('groupInfoBtn').classList.add('hidden');
         }
     }
 
@@ -1813,14 +1810,6 @@ class ChatApp {
                 }
             });
 
-            // 已读回执（仅私聊）
-            let readStatus = '';
-            if (!msg.isGroup && isOwn && msg.readBy && msg.readBy.length > 0) {
-                readStatus = '<span class="message-status read">已读</span>';
-            } else if (!msg.isGroup && isOwn) {
-                readStatus = '<span class="message-status">✓</span>';
-            }
-            
             html += `
                 <div class="message-item ${isOwn ? 'own' : ''}" data-msg-id="${msg.msgId}">
                     <div class="message-avatar">${senderInitial}</div>
@@ -1832,7 +1821,6 @@ class ChatApp {
                         ${reactionsHtml ? `<div class="message-reactions">${reactionsHtml}</div>` : ''}
                         <div class="message-meta">
                             <span class="message-time">${time}</span>
-                            ${readStatus}
                             ${isOwn ? `
                                 <div class="message-actions">
                                     <button class="btn-action" onclick="app.recallMessage('${msg.msgId}')">撤回</button>

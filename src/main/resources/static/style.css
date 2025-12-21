@@ -568,10 +568,6 @@ body {
     cursor: help; /* 显示帮助光标，提示用户可以查看 */
 }
 
-.message-status {
-    display: flex;
-    gap: 4px;
-}
 
 .message-reactions {
     display: flex;
@@ -643,9 +639,6 @@ body {
     border-color: #2196f3 !important;
 }
 
-.message-status.read {
-    color: #4caf50;
-}
 
 /* 输入区域 */
 .chat-input-area {
