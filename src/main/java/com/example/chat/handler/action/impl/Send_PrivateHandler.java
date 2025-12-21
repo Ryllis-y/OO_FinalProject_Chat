@@ -50,12 +50,6 @@ public class Send_PrivateHandler extends BaseActionHandler {
                 return;
             }
             
-            // 检查目标用户是否在线
-            if (!DataCenter.ONLINE_USERS.containsKey(toUser)) {
-                sendError(session, "用户 " + toUser + " 不在线");
-                return;
-            }
-            
             // 提取 @ 列表
             List<String> atUsers = new ArrayList<>();
             if (params.has("atUsers") && params.get("atUsers").isArray()) {
@@ -64,13 +58,16 @@ public class Send_PrivateHandler extends BaseActionHandler {
                 }
             }
             
-            // 创建并保存消息
+            // 创建并保存消息（无论对方是否在线，都要保存消息）
             Message message = messageService.processAndSaveMsg(fromUser, toUser, content, false, atUsers);
             
-            // 发送给接收者
-            sendToUser(toUser, message);
+            // 发送给接收者（如果在线）
+            if (DataCenter.ONLINE_USERS.containsKey(toUser)) {
+                sendToUser(toUser, message);
+            }
+            // 如果对方不在线，消息已经保存到历史记录中，对方上线后可以通过历史消息看到
             
-            // 也发送给发送者（让发送者能看到自己发送的消息）
+            // 总是发送给发送者（让发送者能看到自己发送的消息，无论对方是否在线）
             sendToUser(fromUser, message);
             
             // 发送回执给发送者

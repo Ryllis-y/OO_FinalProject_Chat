@@ -142,23 +142,23 @@ public class LoginHandler extends BaseActionHandler {
      * @param oldSession 旧的WebSocket会话（将被关闭）
      */
     private void handleMultiDeviceLogin(String username, WebSocketSession oldSession) {
-        try {
-            // 发送被顶号通知
-            WsResponse kickOutResponse = WsResponse.builder()
-                    .type("SYS_NOTICE")
-                    .code(400)
-                    .msg("您的账号在另一地点登录，您已被强制下线")
-                    .build();
-            
-            String json = objectMapper.writeValueAsString(kickOutResponse);
-            oldSession.sendMessage(new TextMessage(json));
-            oldSession.close();
-            
+            try {
+                // 发送被顶号通知
+                WsResponse kickOutResponse = WsResponse.builder()
+                        .type("SYS_NOTICE")
+                        .code(400)
+                        .msg("您的账号在另一地点登录，您已被强制下线")
+                        .build();
+                
+                String json = objectMapper.writeValueAsString(kickOutResponse);
+                oldSession.sendMessage(new TextMessage(json));
+                oldSession.close();
+                
             System.out.println("用户被顶号: " + username + ", 旧session: " + oldSession.getId());
-            
-        } catch (IOException e) {
+                
+            } catch (IOException e) {
             System.err.println("发送顶号通知失败: " + e.getMessage());
-            e.printStackTrace();
+                e.printStackTrace();
         }
     }
 }

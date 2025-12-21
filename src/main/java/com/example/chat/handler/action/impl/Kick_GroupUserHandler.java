@@ -42,6 +42,13 @@ public class Kick_GroupUserHandler extends BaseActionHandler {
             String groupId = params.get("groupId").asText();
             String targetUser = params.get("targetUser").asText();
 
+            // 在踢出之前获取群组信息（包含被踢用户）
+            Group groupBeforeKick = DataCenter.GROUPS.get(groupId);
+            if (groupBeforeKick == null) {
+                sendError(session, "群组不存在");
+                return;
+            }
+
             // 调用 UserService 踢出成员
             boolean success = userService.kickGroupUser(operator, groupId, targetUser);
 
@@ -59,6 +66,9 @@ public class Kick_GroupUserHandler extends BaseActionHandler {
 
                 // 通知被踢出的用户
                 notifyKickedUser(targetUser, updatedGroup);
+
+                // 广播踢人系统消息给所有成员（使用踢出前的成员列表，确保被踢用户也能收到）
+                broadcastKickNotice(groupId, groupBeforeKick, operator, targetUser);
 
                 // 广播群组更新给其他成员
                 broadcastGroupUpdate(groupId, updatedGroup, targetUser);
@@ -130,6 +140,43 @@ public class Kick_GroupUserHandler extends BaseActionHandler {
             }
         } catch (Exception e) {
             System.err.println("广播群组更新失败: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * 广播踢人系统消息给所有群成员（包括被踢出的用户，因为他还在群里的时候需要看到）
+     */
+    private void broadcastKickNotice(String groupId, Group group, String operator, String kickedUser) {
+        try {
+            Map<String, Object> noticeData = new HashMap<>();
+            noticeData.put("groupId", groupId);
+            noticeData.put("operator", operator);
+            noticeData.put("targetUser", kickedUser);
+            noticeData.put("message", operator + " 将 " + kickedUser + " 踢出了群聊");
+            
+            WsResponse notice = WsResponse.builder()
+                    .type("GROUP_KICK_NOTICE")
+                    .data(noticeData)
+                    .build();
+            
+            String json = objectMapper.writeValueAsString(notice);
+            
+            // 通知所有群成员（包括被踢出的用户，因为此时他还在成员列表中）
+            for (String member : group.getMembers()) {
+                WebSocketSession memberSession = DataCenter.ONLINE_USERS.get(member);
+                if (memberSession != null && memberSession.isOpen()) {
+                    try {
+                        synchronized (memberSession) {
+                            memberSession.sendMessage(new TextMessage(json));
+                        }
+                    } catch (Exception e) {
+                        System.err.println("通知用户 " + member + " 踢人消息失败: " + e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("广播踢人系统消息失败: " + e.getMessage());
             e.printStackTrace();
         }
     }

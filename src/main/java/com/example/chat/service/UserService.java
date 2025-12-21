@@ -30,6 +30,9 @@ public interface UserService {
     boolean acceptFriendRequest(String fromUser, String toUser);
 
     boolean rejectFriendRequest(String fromUser, String toUser);
+    
+    // 删除好友
+    boolean removeFriend(String userId, String friendId);
 
     boolean kickUser(String adminId, String targetUserId);
 

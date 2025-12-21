@@ -455,7 +455,7 @@ public class ChatHandler extends TextWebSocketHandler {
             sendError(session, "参数错误：缺少 targetUser");
             return;
         }
-        
+
         String targetUser = request.getParams().get("targetUser").asText();
         WebSocketSession targetSession = DataCenter.ONLINE_USERS.get(targetUser);
 
@@ -514,7 +514,7 @@ public class ChatHandler extends TextWebSocketHandler {
             sendError(session, "参数错误：缺少 targetUser 或 duration");
             return;
         }
-        
+
         String targetName = request.getParams().get("targetUser").asText();
         long duration = request.getParams().get("duration").asLong(); // 禁言多少秒
 

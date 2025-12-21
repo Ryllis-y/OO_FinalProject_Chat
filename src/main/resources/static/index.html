@@ -39,6 +39,10 @@
                     <div class="user-name" id="currentUserName">用户</div>
                     <div class="user-role" id="currentUserRole"></div>
                 </div>
+                <button id="friendRequestsBtn" class="btn-icon" title="好友申请" onclick="app.showFriendRequests()">
+                    👥
+                    <span id="friendRequestBadge" class="badge-dot" style="display: none;"></span>
+                </button>
                 <button id="logoutBtn" class="btn-icon" title="退出登录">🚪</button>
             </div>
 
@@ -85,6 +89,7 @@
                     </div>
                 </div>
                 <div class="chat-actions">
+                    <button id="deleteFriendBtn" class="btn-icon hidden" title="删除好友">🗑️</button>
                     <button id="viewMembersBtn" class="btn-icon hidden" title="查看成员">👥</button>
                     <button id="groupInfoBtn" class="btn-icon hidden" title="群组信息">ℹ️</button>
                 </div>
@@ -162,6 +167,21 @@
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeJoinGroupModal()">取消</button>
                 <button class="btn-primary" onclick="joinGroup()">加入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 好友申请弹窗 -->
+    <div id="friendRequestModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>好友申请</h3>
+                <button class="btn-close" onclick="closeFriendRequestModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="friendRequestList">
+                    <div style="padding: 20px; text-align: center; color: #888;">加载中...</div>
+                </div>
             </div>
         </div>
     </div>

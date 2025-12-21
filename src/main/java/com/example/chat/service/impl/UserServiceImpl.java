@@ -206,7 +206,7 @@ public class UserServiceImpl implements UserService {
 
         // 双向添加好友
         to.getFriends().add(fromUser);
-        from.getFriends().add(fromUser);
+        from.getFriends().add(toUser);
 
         // 移除申请
         to.getFriendRequests().remove(fromUser);
@@ -220,6 +220,26 @@ public class UserServiceImpl implements UserService {
         if (to == null) return false;
 
         return to.getFriendRequests().remove(fromUser);
+    }
+    
+    @Override
+    public boolean removeFriend(String userId, String friendId) {
+        if (userId == null || friendId == null || userId.equals(friendId)) {
+            return false;
+        }
+
+        User user = DataCenter.USERS.get(userId);
+        User friend = DataCenter.USERS.get(friendId);
+        
+        if (user == null || friend == null) {
+            return false;
+        }
+
+        // 双向删除好友关系
+        boolean removed1 = user.getFriends().remove(friendId);
+        boolean removed2 = friend.getFriends().remove(userId);
+
+        return removed1 || removed2; // 只要有一方删除成功就返回true
     }
     @Override
 

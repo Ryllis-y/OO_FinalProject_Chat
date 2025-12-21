@@ -9,6 +9,7 @@ class ChatApp {
         this.onlineUsers = new Map(); // 在线用户列表
         this.messages = new Map(); // 消息历史 {targetId: [messages]}
         this.heartbeatInterval = null;
+        this.muteCheckInterval = null; // 禁言状态检查定时器
         this.atMentions = new Map(); // 被@提醒 {groupId: Set<msgId>}
         this.groupMembers = new Map(); // 群成员缓存 {groupId: {members, owner, admins}}
         
@@ -72,6 +73,13 @@ class ChatApp {
         document.getElementById('atBtn').addEventListener('click', () => {
             if (this.currentTarget && this.currentTarget.type === 'group') {
                 this.showAtMemberList(this.currentTarget.id);
+            }
+        });
+
+        // 删除好友按钮
+        document.getElementById('deleteFriendBtn').addEventListener('click', () => {
+            if (this.currentTarget && this.currentTarget.type === 'private') {
+                this.deleteFriend(this.currentTarget.id);
             }
         });
     }
@@ -183,6 +191,28 @@ class ChatApp {
             case 'GROUP_KICKED':
                 this.handleGroupKicked(response.data);
                 break;
+            case 'GROUP_MUTE_NOTICE':
+                this.handleGroupMuteNotice(response.data);
+                break;
+            case 'GROUP_KICK_NOTICE':
+                this.handleGroupKickNotice(response.data);
+                break;
+            case 'FRIEND_REQUEST_ACCEPTED':
+                // 处理好友申请被接受的通知（申请方收到）
+                this.handleFriendRequestAccepted(response.data);
+                break;
+            case 'FRIEND_REQUEST_NOTICE':
+                // 处理新好友申请通知
+                this.handleFriendRequestNotice(response.data);
+                break;
+            case 'FRIEND_REMOVED':
+                // 处理好友关系已解除的通知
+                this.handleFriendRemoved(response.data);
+                break;
+            case 'FRIEND_LIST_UPDATED':
+                // 处理好友列表已更新的通知（删除好友后触发）
+                this.getFriends();
+                break;
             case 'ONLINE_LIST':
                 // 在线用户列表响应，data是数组
                 if (Array.isArray(response.data)) {
@@ -194,12 +224,36 @@ class ChatApp {
                 if (response.data && response.data.groups) {
                     // 群组列表响应
                     this.handleGroupsList(response.data);
+                } else if (response.data && response.data.friends) {
+                    // 好友列表响应
+                    this.handleFriendsList(response.data);
                 } else if (response.data && response.data.messages) {
                     // 历史消息响应
                     this.handleHistory(response.data);
+                } else if (response.data && response.data.friendRequests) {
+                    // 好友申请列表响应
+                    this.handleFriendRequestsList(response.data);
                 } else if (response.data && Array.isArray(response.data)) {
                     // 兼容直接返回数组的情况（如在线用户列表）
                     this.handleOnlineUsers({users: response.data});
+                } else if (response.data && response.data.message && typeof response.data.message === 'string' && 
+                           (response.data.message.includes('接受') || response.data.message.includes('拒绝')) &&
+                           response.data.fromUser) {
+                    // 接受/拒绝好友申请响应
+                    this.showSuccess(response.data.message || '操作成功');
+                    // 刷新好友申请列表
+                    setTimeout(() => {
+                        this.send({
+                            action: 'GET_FRIEND_REQUESTS',
+                            params: {}
+                        });
+                    }, 200);
+                    // 如果接受了申请，刷新好友列表
+                    if (response.data.message.includes('接受')) {
+                        setTimeout(() => {
+                            this.getFriends();
+                        }, 300);
+                    }
                 } else if (response.data && response.data.groupId && response.data.message) {
                     if (response.data.message.includes('退出群组')) {
                         // 退出群组成功响应
@@ -213,6 +267,15 @@ class ChatApp {
                     } else if (response.data.message && typeof response.data.message === 'string' && response.data.message.includes('禁言')) {
                         // 禁言成功响应
                         this.showSuccess(response.data.message || response.msg || '禁言成功');
+                        // 如果被禁言的是当前用户，更新禁言状态
+                        if (response.data.targetUser && this.currentUser && 
+                            (this.currentUser.userId === response.data.targetUser || this.currentUser.username === response.data.targetUser)) {
+                            // 计算禁言结束时间（durationMinutes * 60 * 1000 毫秒）
+                            const durationMinutes = response.data.durationMinutes || 10;
+                            this.currentUser.muteEndTime = Date.now() + (durationMinutes * 60 * 1000);
+                            this.startMuteCheck();
+                            this.updateMuteStatus();
+                        }
                         // 如果是当前群组，刷新成员列表
                         if (response.data.groupId && this.currentTarget && this.currentTarget.type === 'group' && this.currentTarget.id === response.data.groupId) {
                             // 延迟刷新，确保后端已经更新完成
@@ -220,6 +283,41 @@ class ChatApp {
                                 this.getGroupMembers(response.data.groupId);
                             }, 200);
                         }
+                    } else if (response.data && response.data.friendId && 
+                               response.data.message && typeof response.data.message === 'string' && 
+                               response.data.message.includes('删除好友')) {
+                        // 删除好友成功响应
+                        const friendId = response.data.friendId;
+                        this.showSuccess(response.data.message || '已删除好友');
+                        
+                        // 立即从联系人列表中移除
+                        if (friendId && this.contacts.has(friendId)) {
+                            this.contacts.delete(friendId);
+                        }
+                        
+                        // 清除该好友的消息历史
+                        if (friendId && this.messages.has(friendId)) {
+                            this.messages.delete(friendId);
+                        }
+                        
+                        // 如果当前正在与该好友聊天，切换到初始状态
+                        if (this.currentTarget && this.currentTarget.type === 'private' && this.currentTarget.id === friendId) {
+                            this.currentTarget = null;
+                            this.updateChatHeader();
+                            this.renderMessages();
+                        }
+                        
+                        // 重新获取好友列表（确保数据同步，这会重新填充this.contacts）
+                        // handleFriendsList会自动更新contacts和UI
+                        this.getFriends();
+                    } else if (response.data.message && typeof response.data.message === 'string' && 
+                               response.data.message.includes('好友申请已发送')) {
+                        // 发送好友申请成功响应
+                        this.showSuccess(response.data.message || '好友申请已发送');
+                        // 刷新在线用户列表（更新按钮状态）
+                        setTimeout(() => {
+                            this.renderOnlineUsers();
+                        }, 200);
                     } else if ((response.data.message && typeof response.data.message === 'string' && response.data.message.includes('管理员')) || response.data.action) {
                         // 设置/取消管理员成功响应
                         this.showSuccess(response.data.message || response.msg || '操作成功');
@@ -257,6 +355,8 @@ class ChatApp {
             this.updateUserInfo();
             document.getElementById('loginPanel').classList.add('hidden');
             document.getElementById('chatPanel').classList.remove('hidden');
+            // 启动禁言状态检查
+            this.startMuteCheck();
             // WebSocket 连接已经在登录前建立了，直接加载初始数据
             // 但如果连接还没建立好，等待一下
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -292,11 +392,22 @@ class ChatApp {
 
     // 加载初始数据
     loadInitialData() {
-        // 获取在线用户列表（用于更新联系人状态，但不自动添加联系人）
+        // 获取好友列表（恢复联系人列表）
+        this.getFriends();
+        // 获取在线用户列表（用于更新联系人状态）
         this.getOnlineUsers();
         // 获取群组列表
         this.getGroups();
-        // 注意：联系人列表初始为空，只有私聊后才会添加
+        // 检查好友申请（用于显示小红点）
+        this.checkFriendRequests();
+    }
+
+    // 检查好友申请（用于更新小红点）
+    checkFriendRequests() {
+        this.send({
+            action: 'GET_FRIEND_REQUESTS',
+            params: {}
+        });
     }
 
     // 获取在线用户列表
@@ -346,6 +457,11 @@ class ChatApp {
             console.log('在线用户数量:', this.onlineUsers.size);
             this.renderContacts();
             
+            // 如果当前正在与某个用户聊天，更新聊天头部的在线状态
+            if (this.currentTarget && this.currentTarget.type === 'private') {
+                this.updateChatHeader();
+            }
+            
             // 如果当前在"在线用户"标签页，更新显示
             const onlineTabBtn = document.querySelector('.tab-btn[data-tab="online"]');
             if (onlineTabBtn && onlineTabBtn.classList.contains('active')) {
@@ -356,11 +472,56 @@ class ChatApp {
         }
     }
 
+    // 获取好友列表
+    getFriends() {
+        this.send({
+            action: 'GET_FRIENDS',
+            params: {}
+        });
+    }
+
     // 获取群组列表
     getGroups() {
         this.send({
             action: 'GET_GROUPS',
             params: {}
+        });
+    }
+
+    // 处理好友列表
+    handleFriendsList(data) {
+        if (data && data.friends && Array.isArray(data.friends)) {
+            // 清空当前联系人列表
+            this.contacts.clear();
+            
+            // 添加好友到联系人列表
+            data.friends.forEach(friend => {
+                const userId = friend.userId || friend.username;
+                if (userId) {
+                    this.contacts.set(userId, {
+                        name: friend.username || userId,
+                        lastMsg: friend.lastMsg || '',
+                        timestamp: friend.lastMsgTime || 0,
+                        isOnline: friend.isOnline || false
+                    });
+                }
+            });
+            
+            // 更新在线状态
+            this.updateFriendsOnlineStatus();
+            
+            // 渲染联系人列表和在线用户列表（确保"已添加"状态更新为加号）
+            this.renderContacts();
+            this.renderOnlineUsers();
+            
+            console.log('好友列表加载完成，共 ' + data.friends.length + ' 个好友');
+        }
+    }
+
+    // 更新好友在线状态
+    updateFriendsOnlineStatus() {
+        this.contacts.forEach((contact, userId) => {
+            contact.isOnline = this.onlineUsers.has(userId);
         });
     }
 
@@ -959,10 +1120,10 @@ class ChatApp {
                      onclick="app.selectChatTarget('private', '${userId}')">
                     <div class="contact-avatar">${contact.name.charAt(0).toUpperCase()}</div>
                     <div class="contact-info">
-                        <div class="contact-name">${contact.name}</div>
+                        <div class="contact-name ${contact.isOnline ? 'online' : 'offline'}">${contact.name}</div>
                         <div class="contact-last-msg">${contact.lastMsg || '暂无消息'}</div>
                     </div>
-                    ${contact.isOnline ? '<span class="contact-badge">在线</span>' : ''}
+                    ${contact.isOnline ? '<span class="contact-badge online">在线</span>' : '<span class="contact-badge offline">离线</span>'}
                 </div>
             `;
         });
@@ -1017,6 +1178,7 @@ class ChatApp {
         const list = document.getElementById('onlineUsersList');
         let html = '';
         const currentUserId = this.currentUser ? (this.currentUser.userId || this.currentUser.username) : null;
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
         
         this.onlineUsers.forEach((user, userId) => {
             // 排除当前用户
@@ -1025,16 +1187,25 @@ class ChatApp {
             
             const isAdmin = user.role === 'ADMIN';
             const displayName = user.username || userId;
+            
+            // 搜索过滤
+            if (searchTerm && !displayName.toLowerCase().includes(searchTerm)) {
+                return;
+            }
+            
+            // 检查是否已经是好友
+            const isFriend = this.contacts.has(userIdToCompare);
             html += `
-                <div class="contact-item" onclick="app.selectChatTarget('private', '${userIdToCompare}')">
-                    <div class="contact-avatar">${displayName.charAt(0).toUpperCase()}</div>
-                    <div class="contact-info">
+                <div class="contact-item">
+                    <div class="contact-avatar" onclick="app.selectChatTarget('private', '${userIdToCompare}')">${displayName.charAt(0).toUpperCase()}</div>
+                    <div class="contact-info" onclick="app.selectChatTarget('private', '${userIdToCompare}')">
                         <div class="contact-name">
-                            ${displayName}
+                            ${this.escapeHtml(displayName)}
                             ${isAdmin ? ' <span style="color: #ffd700;">👑</span>' : ''}
                         </div>
-                        <div class="contact-last-msg">在线</div>
+                        <div class="contact-last-msg">${isFriend ? '已添加' : '在线'}</div>
                     </div>
+                    ${!isFriend ? `<button class="btn-add-friend-icon" onclick="event.stopPropagation(); app.sendFriendRequest('${this.escapeHtml(userIdToCompare)}')" title="添加好友">+</button>` : ''}
                 </div>
             `;
         });
@@ -1098,6 +1269,8 @@ class ChatApp {
         this.loadMessages();
         this.renderContacts();
         this.renderGroups();
+        // 更新禁言状态
+        this.updateMuteStatus();
         
         // 显示/隐藏相关按钮
         const atBtn = document.getElementById('atBtn');
@@ -1116,6 +1289,11 @@ class ChatApp {
         if (!this.currentTarget) {
             document.getElementById('targetName').textContent = '选择一个聊天对象';
             document.getElementById('targetStatus').textContent = '';
+            // 隐藏所有操作按钮
+            document.getElementById('atBtn').classList.add('hidden');
+            document.getElementById('viewMembersBtn').classList.add('hidden');
+            document.getElementById('deleteFriendBtn').classList.add('hidden');
+            document.getElementById('groupInfoBtn').classList.add('hidden');
             return;
         }
 
@@ -1124,13 +1302,35 @@ class ChatApp {
             const name = contact ? contact.name : this.currentTarget.id;
             document.getElementById('targetName').textContent = name;
             document.getElementById('targetAvatar').textContent = name.charAt(0).toUpperCase();
-            document.getElementById('targetStatus').textContent = contact && contact.isOnline ? '在线' : '离线';
+            const statusElement = document.getElementById('targetStatus');
+            // 获取在线状态：如果联系人在contacts中，使用contact.isOnline；否则从onlineUsers中查找
+            const isOnline = contact ? contact.isOnline : (this.onlineUsers.has(this.currentTarget.id));
+            statusElement.textContent = isOnline ? '在线' : '离线';
+            // 应用相应的CSS类
+            statusElement.className = 'target-status ' + (isOnline ? 'online' : 'offline');
+            // 隐藏群聊相关按钮，显示私聊相关按钮
+            document.getElementById('atBtn').classList.add('hidden');
+            document.getElementById('viewMembersBtn').classList.add('hidden');
+            document.getElementById('groupInfoBtn').classList.add('hidden');
+            // 显示删除好友按钮（如果对方是好友）
+            const deleteFriendBtn = document.getElementById('deleteFriendBtn');
+            if (contact) {
+                deleteFriendBtn.classList.remove('hidden');
+            } else {
+                deleteFriendBtn.classList.add('hidden');
+            }
         } else if (this.currentTarget.type === 'group') {
             const group = this.groups.get(this.currentTarget.id);
             const name = group ? group.name : this.currentTarget.id;
             document.getElementById('targetName').textContent = name;
             document.getElementById('targetAvatar').textContent = '群';
             document.getElementById('targetStatus').textContent = '群聊';
+            // 显示群聊相关按钮（所有群成员都可以使用@功能）
+            document.getElementById('atBtn').classList.remove('hidden');
+            document.getElementById('viewMembersBtn').classList.remove('hidden');
+            // 隐藏私聊相关按钮
+            document.getElementById('deleteFriendBtn').classList.add('hidden');
+            document.getElementById('groupInfoBtn').classList.add('hidden');
         }
     }
 
@@ -1339,11 +1539,9 @@ class ChatApp {
             return;
         }
 
-        // 检查是否被禁言
-        if (this.currentUser && this.currentUser.muteEndTime > Date.now()) {
-            const remaining = Math.ceil((this.currentUser.muteEndTime - Date.now()) / 1000);
-            this.showError(`您已被禁言，剩余时间: ${remaining} 秒`);
-            return;
+        // 检查是否被禁言（只在群聊中检查）
+        if (this.currentTarget && this.currentTarget.type === 'group' && this.isMuted()) {
+            return; // updateMuteStatus 已经显示了提示
         }
 
         // 提取@用户列表（支持@所有人）
@@ -1467,25 +1665,16 @@ class ChatApp {
                 console.warn('收到群聊消息，但群组不在列表中: ' + message.toUser);
             }
         } else {
-            // 私聊消息：更新联系人信息
-            // 只有私聊后才会将对方添加到联系人列表
-            if (!this.contacts.has(targetId)) {
-                // 检查是否在线
-                const isOnline = this.onlineUsers.has(targetId);
-                this.contacts.set(targetId, {
-                    name: targetId,
-                    lastMsg: '',
-                    timestamp: 0,
-                    isOnline: isOnline
-                });
-            }
+            // 私聊消息：只更新已存在的好友的联系人信息（联系人列表只显示好友）
             const contact = this.contacts.get(targetId);
             if (contact) {
+                // 只更新已存在的好友的信息
                 contact.lastMsg = message.content.substring(0, 30);
                 contact.timestamp = message.timestamp;
                 // 更新在线状态（如果对方在线）
                 contact.isOnline = this.onlineUsers.has(targetId);
             }
+            // 如果不是好友，不添加到联系人列表，但仍然保存消息以便查看历史
         }
 
         // 添加到消息列表
@@ -1547,6 +1736,20 @@ class ChatApp {
         const currentUserId = this.currentUser ? (this.currentUser.userId || this.currentUser.username) : null;
         
         messages.forEach(msg => {
+            // 处理系统消息（禁言、踢人等）
+            if (msg.isSystemMessage) {
+                const fullTime = this.formatFullTime(msg.timestamp);
+                html += `
+                    <div class="message-item">
+                        <div class="message-system">${this.escapeHtml(msg.content)}</div>
+                        <div class="message-meta">
+                            <span class="message-time">${fullTime}</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
             if (!msg || msg.recalled) {
                 // 被撤回的消息显示特殊提示：显示"某某撤回了一条消息"
                 const originalFromUser = msg.originalFromUser || msg.fromUser;
@@ -1767,6 +1970,285 @@ class ChatApp {
     updateInputHint(hint) {
         document.getElementById('inputHint').textContent = hint;
     }
+
+    // 显示好友申请
+    showFriendRequests() {
+        document.getElementById('friendRequestModal').classList.remove('hidden');
+        // 获取好友申请列表
+        this.send({
+            action: 'GET_FRIEND_REQUESTS',
+            params: {}
+        });
+    }
+
+    // 处理好友申请列表
+    handleFriendRequestsList(data) {
+        const listEl = document.getElementById('friendRequestList');
+        // 更新小红点状态
+        const badge = document.getElementById('friendRequestBadge');
+        if (badge) {
+            if (data && data.friendRequests && data.friendRequests.length > 0) {
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        if (!data || !data.friendRequests || data.friendRequests.length === 0) {
+            listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: #888;">暂无好友申请</div>';
+            return;
+        }
+
+        let html = '';
+        data.friendRequests.forEach(fromUser => {
+            html += `
+                <div style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 500; margin-bottom: 5px;">${this.escapeHtml(fromUser)}</div>
+                        <div style="font-size: 12px; color: #888;">想要添加您为好友</div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" onclick="app.acceptFriendRequest('${this.escapeHtml(fromUser)}')" style="padding: 5px 20px; font-size: 14px; width: auto; min-width: 70px;">接受</button>
+                        <button class="btn-secondary" onclick="app.rejectFriendRequest('${this.escapeHtml(fromUser)}')" style="padding: 5px 20px; font-size: 14px; min-width: 70px;">拒绝</button>
+                    </div>
+                </div>
+            `;
+        });
+        listEl.innerHTML = html;
+    }
+
+    // 接受好友申请
+    acceptFriendRequest(fromUser) {
+        this.send({
+            action: 'ACCEPT_FRIEND_REQUEST',
+            params: {
+                fromUser: fromUser
+            }
+        });
+    }
+
+    // 拒绝好友申请
+    rejectFriendRequest(fromUser) {
+        this.send({
+            action: 'REJECT_FRIEND_REQUEST',
+            params: {
+                fromUser: fromUser
+            }
+        });
+    }
+
+    // 发送好友申请
+    sendFriendRequest(toUser) {
+        if (!toUser) return;
+        
+        if (confirm(`确定要添加 ${toUser} 为好友吗？`)) {
+            this.send({
+                action: 'SEND_FRIEND_REQUEST',
+                params: {
+                    toUser: toUser
+                }
+            });
+        }
+    }
+
+    // 处理好友申请被接受的通知（申请方收到）
+    handleFriendRequestAccepted(data) {
+        if (!data || !data.toUser) return;
+        
+        // 立即刷新好友列表（因为现在双方是好友了），不需要等待用户确认
+        this.getFriends();
+        
+        // 显示通知（但不阻塞）
+        this.showSuccess(data.message || data.toUser + ' 接受了您的好友申请');
+    }
+
+    // 处理新好友申请通知
+    handleFriendRequestNotice(data) {
+        if (!data || !data.fromUser) return;
+        
+        // 显示小红点
+        this.updateFriendRequestBadge(true);
+        
+        // 显示通知
+        this.showSuccess(data.message || data.fromUser + ' 想要添加您为好友');
+    }
+
+    // 删除好友
+    deleteFriend(friendId) {
+        if (!friendId) return;
+        
+        if (confirm('确定要删除该好友吗？删除后双方将不再显示在对方的联系人列表中。')) {
+            this.send({
+                action: 'DELETE_FRIEND',
+                params: {
+                    friendId: friendId
+                }
+            });
+        }
+    }
+
+    // 处理好友关系已解除的通知（对方删除了我）
+    handleFriendRemoved(data) {
+        if (!data || !data.userId) return;
+        
+        const userId = data.userId;
+        
+        // 清除该用户的消息历史
+        if (this.messages.has(userId)) {
+            this.messages.delete(userId);
+        }
+        
+        // 如果当前正在与该用户聊天，切换到初始状态
+        if (this.currentTarget && this.currentTarget.type === 'private' && this.currentTarget.id === userId) {
+            this.currentTarget = null;
+            this.updateChatHeader();
+            this.renderMessages();
+        }
+        
+        // 重新获取好友列表（这会触发handleFriendsList，从后端获取最新列表并更新contacts）
+        // handleFriendsList会清空contacts并重新填充，所以会自动移除被删除的好友
+        this.getFriends();
+        
+        // 显示通知
+        this.showError(data.message || userId + ' 已解除与您的好友关系');
+    }
+
+    // 更新好友申请小红点
+    updateFriendRequestBadge(show) {
+        const badge = document.getElementById('friendRequestBadge');
+        if (badge) {
+            if (show === true) {
+                badge.style.display = 'block';
+            } else if (show === false) {
+                badge.style.display = 'none';
+            }
+            // 如果show未指定，检查当前状态
+        }
+    }
+
+    // HTML转义
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // 检查是否被禁言
+    isMuted() {
+        if (!this.currentUser || !this.currentUser.muteEndTime) {
+            return false;
+        }
+        return this.currentUser.muteEndTime > Date.now();
+    }
+
+    // 启动禁言状态检查定时器
+    startMuteCheck() {
+        // 清除之前的定时器
+        if (this.muteCheckInterval) {
+            clearInterval(this.muteCheckInterval);
+        }
+        
+        // 每秒检查一次禁言状态
+        this.muteCheckInterval = setInterval(() => {
+            this.updateMuteStatus();
+        }, 1000);
+    }
+
+    // 更新禁言状态显示
+    updateMuteStatus() {
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const inputHint = document.getElementById('inputHint');
+        
+        if (!messageInput || !sendBtn || !inputHint) {
+            return;
+        }
+
+        // 只在群聊中检查禁言状态
+        if (!this.currentTarget || this.currentTarget.type !== 'group') {
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            inputHint.textContent = '';
+            return;
+        }
+
+        if (this.isMuted()) {
+            const remaining = this.currentUser.muteEndTime - Date.now();
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            inputHint.textContent = `您已被禁言！还剩${minutes}分${seconds}秒解除`;
+            inputHint.style.color = '#ff4444';
+        } else {
+            messageInput.disabled = false;
+            sendBtn.disabled = false;
+            inputHint.textContent = '';
+        }
+    }
+
+    // 处理群聊禁言系统消息
+    handleGroupMuteNotice(data) {
+        if (!data || !data.groupId) return;
+        
+        const groupId = data.groupId;
+        const message = {
+            msgId: 'system_' + Date.now() + '_' + Math.random(),
+            fromUser: '系统',
+            toUser: groupId,
+            content: data.message || (data.operator + ' 禁言了 ' + data.targetUser + ' ' + (data.durationMinutes || 0) + ' 分钟'),
+            timestamp: Date.now(),
+            isGroup: true,
+            isSystemMessage: true
+        };
+
+        // 添加到消息历史
+        if (!this.messages.has(groupId)) {
+            this.messages.set(groupId, []);
+        }
+        this.messages.get(groupId).push(message);
+
+        // 如果当前正在查看这个群组，立即渲染
+        if (this.currentTarget && this.currentTarget.type === 'group' && this.currentTarget.id === groupId) {
+            this.renderMessages();
+        }
+
+        // 如果被禁言的是当前用户，更新禁言状态
+        if (data.targetUser && this.currentUser && 
+            (this.currentUser.userId === data.targetUser || this.currentUser.username === data.targetUser)) {
+            const durationMinutes = data.durationMinutes || 10;
+            this.currentUser.muteEndTime = Date.now() + (durationMinutes * 60 * 1000);
+            this.updateMuteStatus();
+        }
+    }
+
+    // 处理群聊踢人系统消息
+    handleGroupKickNotice(data) {
+        if (!data || !data.groupId) return;
+        
+        const groupId = data.groupId;
+        const message = {
+            msgId: 'system_' + Date.now() + '_' + Math.random(),
+            fromUser: '系统',
+            toUser: groupId,
+            content: data.message || (data.operator + ' 将 ' + data.targetUser + ' 踢出了群聊'),
+            timestamp: Date.now(),
+            isGroup: true,
+            isSystemMessage: true
+        };
+
+        // 添加到消息历史
+        if (!this.messages.has(groupId)) {
+            this.messages.set(groupId, []);
+        }
+        this.messages.get(groupId).push(message);
+
+        // 如果当前正在查看这个群组，立即渲染
+        if (this.currentTarget && this.currentTarget.type === 'group' && this.currentTarget.id === groupId) {
+            this.renderMessages();
+        }
+    }
 }
 
 // 全局应用实例
@@ -1851,6 +2333,11 @@ function joinGroup() {
 function closeJoinGroupModal() {
     document.getElementById('joinGroupModal').classList.add('hidden');
     document.getElementById('joinGroupIdInput').value = '';
+}
+
+// 关闭好友申请弹窗
+function closeFriendRequestModal() {
+    document.getElementById('friendRequestModal').classList.add('hidden');
 }
 
 // 页面加载完成后初始化
