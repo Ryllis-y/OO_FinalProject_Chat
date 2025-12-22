@@ -326,6 +326,23 @@ body {
     color: white;
 }
 
+.btn-admin-action {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.5);
+    color: #ffc107;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 5px;
+    transition: all 0.2s;
+    margin-left: 5px;
+}
+
+.btn-admin-action:hover {
+    background: rgba(255, 193, 7, 0.3);
+    border-color: #ffc107;
+}
+
 .btn-add-friend-icon {
     background: #4caf50;
     color: white;

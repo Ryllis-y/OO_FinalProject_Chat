@@ -12,6 +12,7 @@ class ChatApp {
         this.muteCheckInterval = null; // 禁言状态检查定时器
         this.atMentions = new Map(); // 被@提醒 {groupId: Set<msgId>}
         this.groupMembers = new Map(); // 群成员缓存 {groupId: {members, owner, admins}}
+        this.kickedByAdmin = false; // 标记是否被管理员踢出
         
         this.init();
     }
@@ -111,6 +112,11 @@ class ChatApp {
 
         this.ws.onclose = () => {
             console.log('WebSocket连接已关闭');
+            // 如果是被管理员踢出，不自动重连
+            if (this.kickedByAdmin) {
+                this.kickedByAdmin = false; // 重置标志
+                return;
+            }
             if (this.currentUser) {
                 this.showError('连接已断开，正在重连...');
                 setTimeout(() => this.connect(), 3000);
@@ -196,6 +202,14 @@ class ChatApp {
                 break;
             case 'GROUP_KICK_NOTICE':
                 this.handleGroupKickNotice(response.data);
+                break;
+            case 'USER_MUTE_NOTICE':
+                // 处理全局禁言通知
+                this.handleUserMuteNotice(response.data);
+                break;
+            case 'USER_KICKED':
+                // 处理被踢下线通知
+                this.handleUserKicked(response.data);
                 break;
             case 'FRIEND_REQUEST_ACCEPTED':
                 // 处理好友申请被接受的通知（申请方收到）
@@ -328,6 +342,30 @@ class ChatApp {
                                 this.getGroupMembers(response.data.groupId);
                             }, 200);
                         }
+                    }
+                } else if (response.data && response.data.message && typeof response.data.message === 'string') {
+                    if (response.data.message.includes('踢下线') || response.data.message.includes('踢出用户')) {
+                        // 系统管理员踢出用户成功响应
+                        this.showSuccess(response.data.message || '用户已被踢下线');
+                        // 刷新在线用户列表
+                        setTimeout(() => {
+                            this.getOnlineUsers();
+                        }, 200);
+                        // 关闭管理菜单
+                        this.closeAdminManageMenu();
+                    } else if (response.data.message.includes('禁言用户') && !response.data.groupId) {
+                        // 系统管理员全局禁言用户成功响应（不是群内禁言）
+                        this.showSuccess(response.data.message || '禁言成功');
+                        // 如果被禁言的是当前用户，更新禁言状态
+                        if (response.data.targetUser && this.currentUser && 
+                            (this.currentUser.userId === response.data.targetUser || this.currentUser.username === response.data.targetUser)) {
+                            const durationMinutes = response.data.duration || 10;
+                            this.currentUser.muteEndTime = Date.now() + (durationMinutes * 60 * 1000);
+                            this.startMuteCheck();
+                            this.updateMuteStatus();
+                        }
+                        // 关闭管理菜单
+                        this.closeAdminManageMenu();
                     }
                 } else if (typeof response.data === 'string' && (response.data.includes('禁言') || response.data.includes('管理员'))) {
                     // 处理字符串类型的响应（兼容旧格式）
@@ -834,7 +872,100 @@ class ChatApp {
         }
     }
 
-    // 显示管理菜单
+    // 显示系统管理员管理菜单（在线用户列表）
+    showAdminManageMenu(targetUser) {
+        const currentUserId = this.currentUser ? (this.currentUser.userId || this.currentUser.username) : null;
+        const currentUserIsAdmin = this.currentUser && (this.currentUser.role === 'ADMIN');
+        
+        if (!currentUserIsAdmin) {
+            alert('无权限操作');
+            return;
+        }
+        
+        const actions = [];
+        
+        // 禁言功能
+        actions.push({
+            label: '禁言用户',
+            action: () => {
+                const minutes = prompt(`请输入禁言时长（分钟）:`, '10');
+                if (minutes && !isNaN(minutes) && parseInt(minutes) > 0) {
+                    this.muteUser(targetUser, parseInt(minutes));
+                }
+            }
+        });
+        
+        // 踢出功能
+        actions.push({
+            label: '踢出用户',
+            action: () => {
+                if (confirm(`确定要将 ${targetUser} 踢下线吗？`)) {
+                    this.kickUser(targetUser);
+                }
+            }
+        });
+        
+        // 显示操作菜单
+        const menuHtml = actions.map((action, index) => {
+            const actionFunc = action.action;
+            const actionId = `adminManageAction_${Date.now()}_${index}`;
+            window[actionId] = function() {
+                actionFunc();
+                delete window[actionId];
+            };
+            return `<button class="manage-menu-item" onclick="app.closeAdminManageMenu(); window['${actionId}']();">${action.label}</button>`;
+        }).join('');
+        
+        const menuDiv = document.createElement('div');
+        menuDiv.className = 'manage-menu';
+        menuDiv.innerHTML = `
+            <div class="manage-menu-content">
+                <h4>管理员操作 - ${targetUser}</h4>
+                ${menuHtml}
+                <button class="manage-menu-item" onclick="app.closeAdminManageMenu()">取消</button>
+            </div>
+        `;
+        menuDiv.id = 'adminManageMenu';
+        document.body.appendChild(menuDiv);
+        
+        // 关闭菜单
+        menuDiv.addEventListener('click', (e) => {
+            if (e.target === menuDiv) {
+                this.closeAdminManageMenu();
+            }
+        });
+    }
+
+    // 关闭管理员管理菜单
+    closeAdminManageMenu() {
+        const menu = document.getElementById('adminManageMenu');
+        if (menu) {
+            menu.remove();
+        }
+    }
+
+    // 系统管理员禁言用户
+    muteUser(targetUser, durationMinutes) {
+        this.send({
+            action: 'MUTE_USER',
+            params: {
+                targetUser: targetUser,
+                duration: durationMinutes
+            }
+        });
+    }
+
+    // 系统管理员踢出用户
+    kickUser(targetUser) {
+        this.send({
+            action: 'KICK_USER',
+            params: {
+                targetUser: targetUser
+            }
+        });
+    }
+
+    // 显示管理菜单（群组成员管理）
     showManageMenu(groupId, targetUser, isOwner, isAdmin) {
         const currentUserId = this.currentUser ? (this.currentUser.userId || this.currentUser.username) : null;
         const group = this.groups.get(groupId);
@@ -1195,6 +1326,9 @@ class ChatApp {
             
             // 检查是否已经是好友
             const isFriend = this.contacts.has(userIdToCompare);
+            // 检查当前用户是否是管理员
+            const currentUserIsAdmin = this.currentUser && (this.currentUser.role === 'ADMIN');
+            
             html += `
                 <div class="contact-item">
                     <div class="contact-avatar" onclick="app.selectChatTarget('private', '${userIdToCompare}')">${displayName.charAt(0).toUpperCase()}</div>
@@ -1205,7 +1339,12 @@ class ChatApp {
                         </div>
                         <div class="contact-last-msg">${isFriend ? '已添加' : '在线'}</div>
                     </div>
-                    ${!isFriend ? `<button class="btn-add-friend-icon" onclick="event.stopPropagation(); app.sendFriendRequest('${this.escapeHtml(userIdToCompare)}')" title="添加好友">+</button>` : ''}
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                        ${currentUserIsAdmin && !isAdmin ? `
+                            <button class="btn-admin-action" onclick="event.stopPropagation(); app.showAdminManageMenu('${this.escapeHtml(userIdToCompare)}')" title="管理员操作">⚙️</button>
+                        ` : ''}
+                        ${!isFriend ? `<button class="btn-add-friend-icon" onclick="event.stopPropagation(); app.sendFriendRequest('${this.escapeHtml(userIdToCompare)}')" title="添加好友">+</button>` : ''}
+                    </div>
                 </div>
             `;
         });
@@ -1536,8 +1675,8 @@ class ChatApp {
             return;
         }
 
-        // 检查是否被禁言（只在群聊中检查）
-        if (this.currentTarget && this.currentTarget.type === 'group' && this.isMuted()) {
+        // 检查是否被禁言（全局禁言或群聊禁言）
+        if (this.isMuted()) {
             return; // updateMuteStatus 已经显示了提示
         }
 
@@ -2152,14 +2291,7 @@ class ChatApp {
             return;
         }
 
-        // 只在群聊中检查禁言状态
-        if (!this.currentTarget || this.currentTarget.type !== 'group') {
-            messageInput.disabled = false;
-            sendBtn.disabled = false;
-            inputHint.textContent = '';
-            return;
-        }
-
+        // 检查全局禁言状态（无论是否在群聊中）
         if (this.isMuted()) {
             const remaining = this.currentUser.muteEndTime - Date.now();
             const minutes = Math.floor(remaining / 60000);
@@ -2170,6 +2302,10 @@ class ChatApp {
             inputHint.textContent = `您已被禁言！还剩${minutes}分${seconds}秒解除`;
             inputHint.style.color = '#ff4444';
         } else {
+            // 清除禁言状态
+            if (this.currentUser) {
+                this.currentUser.muteEndTime = 0;
+            }
             messageInput.disabled = false;
             sendBtn.disabled = false;
             inputHint.textContent = '';
@@ -2207,8 +2343,44 @@ class ChatApp {
             (this.currentUser.userId === data.targetUser || this.currentUser.username === data.targetUser)) {
             const durationMinutes = data.durationMinutes || 10;
             this.currentUser.muteEndTime = Date.now() + (durationMinutes * 60 * 1000);
+            this.startMuteCheck();
             this.updateMuteStatus();
         }
+    }
+
+    // 处理全局禁言通知
+    handleUserMuteNotice(data) {
+        if (!data || !data.targetUser) return;
+        
+        // 如果被禁言的是当前用户，更新禁言状态
+        if (this.currentUser && 
+            (this.currentUser.userId === data.targetUser || this.currentUser.username === data.targetUser)) {
+            const durationMinutes = data.durationMinutes || 10;
+            this.currentUser.muteEndTime = Date.now() + (durationMinutes * 60 * 1000);
+            this.startMuteCheck();
+            this.updateMuteStatus();
+            this.showError(data.message || '您已被管理员禁言');
+        }
+    }
+
+    // 处理被踢下线通知
+    handleUserKicked(data) {
+        const message = data.message || '您已被管理员强制下线';
+        this.showError(message);
+        
+        // 标记为被踢出，阻止自动重连
+        this.kickedByAdmin = true;
+        
+        // 延迟一下确保消息显示，然后回到登录界面
+        setTimeout(() => {
+            this.logout();
+            // 显示明确的提示
+            const errorEl = document.getElementById('loginError');
+            if (errorEl) {
+                errorEl.textContent = message;
+                errorEl.classList.add('show');
+            }
+        }, 1000);
     }
 
     // 处理群聊踢人系统消息

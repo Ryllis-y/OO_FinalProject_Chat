@@ -253,9 +253,31 @@ public class UserServiceImpl implements UserService {
         if (session == null) return false;
 
         try {
-            session.sendMessage(new TextMessage("你已被管理员踢下线"));
+            // 发送踢出通知事件（JSON格式）
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            java.util.Map<String, Object> noticeData = new java.util.HashMap<>();
+            noticeData.put("message", "您已被管理员强制下线");
+            noticeData.put("adminId", adminId);
+            
+            com.example.chat.common.packet.WsResponse notice = com.example.chat.common.packet.WsResponse.builder()
+                    .type("USER_KICKED")
+                    .data(noticeData)
+                    .build();
+            
+            String json = objectMapper.writeValueAsString(notice);
+            org.springframework.web.socket.TextMessage message = new org.springframework.web.socket.TextMessage(json);
+            session.sendMessage(message);
+            
+            // 延迟关闭，确保消息已发送
+            Thread.sleep(100);
             session.close();
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            System.err.println("踢出用户时发送通知失败: " + e.getMessage());
+            // 即使发送失败，也要关闭连接
+            try {
+                session.close();
+            } catch (Exception ignored) {}
+        }
 
         DataCenter.ONLINE_USERS.remove(targetUserId);
         return true;

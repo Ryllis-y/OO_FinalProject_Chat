@@ -1,0 +1,9 @@
+"filename", "language", "Java", "HTML", "JavaScript", "PostCSS", "Markdown", "comment", "blank", "total"
+"/Users/ryllis/IdeaProjects/chat/FIX_LOMBOK_ERROR.md", "Markdown", 0, 0, 0, 0, -96, 0, -44, -140
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/ChatHandler.java", "Java", -281, 0, 0, 0, 0, -78, -57, -416
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Delete_FriendHandler.java", "Java", 19, 0, 0, 0, 0, 5, 4, 28
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Msg_ReadHandler.java", "Java", -77, 0, 0, 0, 0, -14, -22, -113
+"/Users/ryllis/IdeaProjects/chat/src/main/resources/static/app.js", "JavaScript", 0, 0, 179, 0, 0, 38, 28, 245
+"/Users/ryllis/IdeaProjects/chat/src/main/resources/static/index.html", "HTML", 0, -1, 0, 0, 0, 0, 0, -1
+"/Users/ryllis/IdeaProjects/chat/src/main/resources/static/style.css", "PostCSS", 0, 0, 0, -5, 0, 0, 0, -5
+"Total", "-", -339, -1, 179, -5, -96, -49, -91, -402
