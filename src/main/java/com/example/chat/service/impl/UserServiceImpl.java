@@ -275,8 +275,8 @@ public class UserServiceImpl implements UserService {
             System.err.println("踢出用户时发送通知失败: " + e.getMessage());
             // 即使发送失败，也要关闭连接
             try {
-                session.close();
-            } catch (Exception ignored) {}
+            session.close();
+        } catch (Exception ignored) {}
         }
 
         DataCenter.ONLINE_USERS.remove(targetUserId);

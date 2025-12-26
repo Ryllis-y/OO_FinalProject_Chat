@@ -74,7 +74,7 @@ public class ChatHandler extends TextWebSocketHandler {
         }
 
         // 4. 如果 HandlerRegistry 中没有找到处理器，返回错误
-        sendError(session, "未知指令: " + request.getAction());
+                sendError(session, "未知指令: " + request.getAction());
     }
 
     @Override
@@ -87,8 +87,8 @@ public class ChatHandler extends TextWebSocketHandler {
             // 广播在线用户列表更新给所有在线用户
             broadcastOnlineUsersUpdate();
         }
-    }
-    
+        }
+
     /**
      * 广播在线用户列表更新给所有在线用户
      */
@@ -117,10 +117,10 @@ public class ChatHandler extends TextWebSocketHandler {
                     try {
                         synchronized (onlineSession) {
                             onlineSession.sendMessage(new TextMessage(json));
-                        }
+                    }
                     } catch (Exception e) {
                         System.err.println("广播在线用户列表更新失败: " + e.getMessage());
-                    }
+                }
                 }
             }
         } catch (Exception e) {

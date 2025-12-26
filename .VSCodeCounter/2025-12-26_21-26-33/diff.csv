@@ -1,0 +1,29 @@
+"filename", "language", "Java", "JavaScript", "PostCSS", "Markdown", "pip requirements", "Python", "comment", "blank", "total"
+"/Users/ryllis/IdeaProjects/chat/README_架构图生成.md", "Markdown", 0, 0, 0, 57, 0, 0, 0, 30, 87
+"/Users/ryllis/IdeaProjects/chat/admin权限测试指南.md", "Markdown", 0, 0, 0, 313, 0, 0, 0, 110, 423
+"/Users/ryllis/IdeaProjects/chat/architecture_mermaid.md", "Markdown", 0, 0, 0, 79, 0, 0, 0, 24, 103
+"/Users/ryllis/IdeaProjects/chat/draw_architecture.py", "Python", 0, 0, 0, 0, 0, 132, 26, 25, 183
+"/Users/ryllis/IdeaProjects/chat/requirements.txt", "pip requirements", 0, 0, 0, 0, 2, 0, 0, 3, 5
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Accept_FriendRequestHandler.java", "Java", 0, 0, 0, 0, 0, 0, 0, 2, 2
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Get_FriendRequestsHandler.java", "Java", 0, 0, 0, 0, 0, 0, 0, 2, 2
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Kick_UserHandler.java", "Java", 89, 0, 0, 0, 0, 0, 14, 21, 124
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Mute_UserHandler.java", "Java", 86, 0, 0, 0, 0, 0, 12, 22, 120
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Reject_FriendRequestHandler.java", "Java", 0, 0, 0, 0, 0, 0, 0, 2, 2
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Send_FriendRequestHandler.java", "Java", 0, 0, 0, 0, 0, 0, 0, 2, 2
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Set_GroupAdminHandler.java", "Java", 0, 0, 0, 0, 0, 0, 0, 2, 2
+"/Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/service/impl/UserServiceImpl.java", "Java", 16, 0, 0, 0, 0, 0, 3, 3, 22
+"/Users/ryllis/IdeaProjects/chat/src/main/resources/static/app.js", "JavaScript", 0, 131, 0, 0, 0, 0, 25, 16, 172
+"/Users/ryllis/IdeaProjects/chat/src/main/resources/static/style.css", "PostCSS", 0, 0, 15, 0, 0, 0, 0, 2, 17
+"/Users/ryllis/IdeaProjects/chat/代码职责划分说明.md", "Markdown", 0, 0, 0, 275, 0, 0, 2, 92, 369
+"/Users/ryllis/IdeaProjects/chat/多电脑连接指南.md", "Markdown", 0, 0, 0, 346, 0, 0, 4, 129, 479
+"/Users/ryllis/IdeaProjects/chat/异常处理机制说明.md", "Markdown", 0, 0, 0, 442, 0, 0, 0, 122, 564
+"/Users/ryllis/IdeaProjects/chat/现场展示操作步骤.md", "Markdown", 0, 0, 0, 373, 0, 0, 0, 166, 539
+"/Users/ryllis/IdeaProjects/chat/答辩大纲.md", "Markdown", 0, 0, 0, 187, 0, 0, 0, 64, 251
+"/Users/ryllis/IdeaProjects/chat/答辩展示文档.md", "Markdown", 0, 0, 0, 350, 0, 0, 0, 119, 469
+"/Users/ryllis/IdeaProjects/chat/答辩问题与回答-精简版.md", "Markdown", 0, 0, 0, 457, 0, 0, 0, 188, 645
+"/Users/ryllis/IdeaProjects/chat/答辩问题与回答.md", "Markdown", 0, 0, 0, 701, 0, 0, 0, 267, 968
+"/Users/ryllis/IdeaProjects/chat/设计模式说明.md", "Markdown", 0, 0, 0, 404, 0, 0, 0, 115, 519
+"/Users/ryllis/IdeaProjects/chat/面向对象大作业开发文档.md", "Markdown", 0, 0, 0, 1114, 0, 0, 0, 378, 1492
+"/Users/ryllis/IdeaProjects/chat/项目结构设计图.md", "Markdown", 0, 0, 0, 219, 0, 0, 0, 25, 244
+"/Users/ryllis/IdeaProjects/chat/项目配置详解.md", "Markdown", 0, 0, 0, 504, 0, 0, 9, 176, 689
+"Total", "-", 191, 131, 15, 5821, 2, 132, 95, 2107, 8494

@@ -1,0 +1,143 @@
+Date : 2025-12-26 21:26:33
+Directory : /Users/ryllis/IdeaProjects/chat
+Total : 78 files,  15119 codes, 1006 comments, 4041 blanks, all 20166 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| Markdown         |         24 |      8,481 |         15 |      2,746 |     11,242 |
+| Java             |         44 |      2,976 |        587 |        759 |      4,322 |
+| JavaScript       |          1 |      1,929 |        310 |        269 |      2,508 |
+| PostCSS          |          1 |        883 |         14 |        156 |      1,053 |
+| HTML             |          2 |        449 |         21 |         47 |        517 |
+| Batch            |          1 |        139 |         26 |         25 |        190 |
+| Python           |          1 |        132 |         26 |         25 |        183 |
+| XML              |          1 |        121 |          2 |          5 |        128 |
+| Java Properties  |          2 |          7 |          5 |          6 |         18 |
+| pip requirements |          1 |          2 |          0 |          3 |          5 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                   |         78 |     15,119 |      1,006 |      4,041 |     20,166 |
+| . (Files)                                                                                                           |         29 |      9,169 |         69 |      2,835 |     12,073 |
+| .mvn                                                                                                                |          1 |          3 |          0 |          1 |          4 |
+| .mvn/wrapper                                                                                                        |          1 |          3 |          0 |          1 |          4 |
+| src                                                                                                                 |         48 |      5,947 |        937 |      1,205 |      8,089 |
+| src/main                                                                                                            |         47 |      5,938 |        937 |      1,200 |      8,075 |
+| src/main/java                                                                                                       |         43 |      2,967 |        587 |        754 |      4,308 |
+| src/main/java/com                                                                                                   |         43 |      2,967 |        587 |        754 |      4,308 |
+| src/main/java/com/example                                                                                           |         43 |      2,967 |        587 |        754 |      4,308 |
+| src/main/java/com/example/chat                                                                                      |         43 |      2,967 |        587 |        754 |      4,308 |
+| src/main/java/com/example/chat (Files)                                                                              |          1 |          9 |          0 |          5 |         14 |
+| src/main/java/com/example/chat/common                                                                               |          5 |        103 |         13 |         36 |        152 |
+| src/main/java/com/example/chat/common/model                                                                         |          3 |         79 |         12 |         29 |        120 |
+| src/main/java/com/example/chat/common/packet                                                                        |          2 |         24 |          1 |          7 |         32 |
+| src/main/java/com/example/chat/config                                                                               |          3 |         72 |         21 |         19 |        112 |
+| src/main/java/com/example/chat/handler                                                                              |         28 |      2,206 |        438 |        543 |      3,187 |
+| src/main/java/com/example/chat/handler (Files)                                                                      |          2 |        146 |         55 |         29 |        230 |
+| src/main/java/com/example/chat/handler/action                                                                       |         26 |      2,060 |        383 |        514 |      2,957 |
+| src/main/java/com/example/chat/handler/action (Files)                                                               |          2 |         46 |         29 |         12 |         87 |
+| src/main/java/com/example/chat/handler/action/impl                                                                  |         24 |      2,014 |        354 |        502 |      2,870 |
+| src/main/java/com/example/chat/repository                                                                           |          1 |         13 |          4 |          6 |         23 |
+| src/main/java/com/example/chat/service                                                                              |          4 |        441 |         68 |        113 |        622 |
+| src/main/java/com/example/chat/service (Files)                                                                      |          2 |         33 |          6 |         15 |         54 |
+| src/main/java/com/example/chat/service/impl                                                                         |          2 |        408 |         62 |         98 |        568 |
+| src/main/java/com/example/chat/util                                                                                 |          1 |        123 |         43 |         32 |        198 |
+| src/main/resources                                                                                                  |          4 |      2,971 |        350 |        446 |      3,767 |
+| src/main/resources (Files)                                                                                          |          1 |          4 |          5 |          5 |         14 |
+| src/main/resources/static                                                                                           |          3 |      2,967 |        345 |        441 |      3,753 |
+| src/test                                                                                                            |          1 |          9 |          0 |          5 |         14 |
+| src/test/java                                                                                                       |          1 |          9 |          0 |          5 |         14 |
+| src/test/java/com                                                                                                   |          1 |          9 |          0 |          5 |         14 |
+| src/test/java/com/example                                                                                           |          1 |          9 |          0 |          5 |         14 |
+| src/test/java/com/example/chat                                                                                      |          1 |          9 |          0 |          5 |         14 |
++---------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                                                                            | language         | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| /Users/ryllis/IdeaProjects/chat/.mvn/wrapper/maven-wrapper.properties                                               | Java Properties  |          3 |          0 |          1 |          4 |
+| /Users/ryllis/IdeaProjects/chat/APIdoc.md                                                                           | Markdown         |        230 |          0 |         50 |        280 |
+| /Users/ryllis/IdeaProjects/chat/README_RUN.md                                                                       | Markdown         |         86 |          0 |         35 |        121 |
+| /Users/ryllis/IdeaProjects/chat/README_架构图生成.md                                                                     | Markdown         |         57 |          0 |         30 |         87 |
+| /Users/ryllis/IdeaProjects/chat/User.md                                                                             | Markdown         |         19 |          0 |         18 |         37 |
+| /Users/ryllis/IdeaProjects/chat/admin权限测试指南.md                                                                      | Markdown         |        313 |          0 |        110 |        423 |
+| /Users/ryllis/IdeaProjects/chat/architecture_mermaid.md                                                             | Markdown         |         79 |          0 |         24 |        103 |
+| /Users/ryllis/IdeaProjects/chat/draw_architecture.py                                                                | Python           |        132 |         26 |         25 |        183 |
+| /Users/ryllis/IdeaProjects/chat/mvnw.cmd                                                                            | Batch            |        139 |         26 |         25 |        190 |
+| /Users/ryllis/IdeaProjects/chat/pom.xml                                                                             | XML              |        121 |          2 |          5 |        128 |
+| /Users/ryllis/IdeaProjects/chat/requirements.txt                                                                    | pip requirements |          2 |          0 |          3 |          5 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/ChatApplication.java                                 | Java             |          9 |          0 |          5 |         14 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/common/model/Group.java                              | Java             |         24 |          1 |          8 |         33 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/common/model/Message.java                            | Java             |         26 |          4 |          6 |         36 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/common/model/User.java                               | Java             |         29 |          7 |         15 |         51 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/common/packet/WsRequest.java                         | Java             |          8 |          0 |          2 |         10 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/common/packet/WsResponse.java                        | Java             |         16 |          1 |          5 |         22 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/config/AppConfig.java                                | Java             |         25 |          7 |          6 |         38 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/config/AuthHandshakeInterceptor.java                 | Java             |         28 |         12 |          9 |         49 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/config/WebSocketConfig.java                          | Java             |         19 |          2 |          4 |         25 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/ChatHandler.java                             | Java             |        109 |         29 |         19 |        157 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/HandlerRegistry.java                         | Java             |         37 |         26 |         10 |         73 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/ActionHandler.java                    | Java             |          6 |          8 |          1 |         15 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/BaseActionHandler.java                | Java             |         40 |         21 |         11 |         72 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Accept_FriendRequestHandler.java | Java             |         66 |          8 |         19 |         93 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Create_GroupHandler.java         | Java             |         89 |         13 |         20 |        122 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Delete_FriendHandler.java        | Java             |         89 |         13 |         22 |        124 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Dissolve_GroupHandler.java       | Java             |         94 |         13 |         22 |        129 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Get_FriendRequestsHandler.java   | Java             |         38 |          5 |         14 |         57 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Get_FriendsHandler.java          | Java             |         69 |          9 |         15 |         93 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Get_GroupMembersHandler.java     | Java             |         58 |          7 |         15 |         80 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Get_GroupsHandler.java           | Java             |         62 |         10 |         16 |         88 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Get_HistoryHandler.java          | Java             |         92 |         14 |         16 |        122 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/HeartbeatHandler.java            | Java             |         17 |          4 |          4 |         25 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Join_GroupHandler.java           | Java             |         56 |          7 |         15 |         78 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Kick_GroupUserHandler.java       | Java             |        135 |         21 |         29 |        185 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Kick_UserHandler.java            | Java             |         89 |         14 |         21 |        124 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Leave_GroupHandler.java          | Java             |         90 |         15 |         22 |        127 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/LoginHandler.java                | Java             |        108 |         28 |         29 |        165 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Msg_ReactHandler.java            | Java             |        168 |         53 |         44 |        265 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Mute_GroupUserHandler.java       | Java             |         91 |         11 |         21 |        123 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Mute_UserHandler.java            | Java             |         86 |         12 |         22 |        120 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Recall_MsgHandler.java           | Java             |        147 |         48 |         39 |        234 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Reject_FriendRequestHandler.java | Java             |         44 |          4 |         15 |         63 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Send_FriendRequestHandler.java   | Java             |         70 |          8 |         20 |         98 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Send_GroupHandler.java           | Java             |         97 |         12 |         22 |        131 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Send_PrivateHandler.java         | Java             |         73 |         12 |         18 |        103 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Set_GroupAdminHandler.java       | Java             |         86 |         13 |         22 |        121 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/repository/DataCenter.java                           | Java             |         13 |          4 |          6 |         23 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/service/MessageService.java                          | Java             |          6 |          1 |          2 |          9 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/service/UserService.java                             | Java             |         27 |          5 |         13 |         45 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/service/impl/MessageServiceImpl.java                 | Java             |         70 |         18 |         23 |        111 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/service/impl/UserServiceImpl.java                    | Java             |        338 |         44 |         75 |        457 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/util/SensitiveWordFilter.java                        | Java             |        123 |         43 |         32 |        198 |
+| /Users/ryllis/IdeaProjects/chat/src/main/resources/application.properties                                           | Java Properties  |          4 |          5 |          5 |         14 |
+| /Users/ryllis/IdeaProjects/chat/src/main/resources/static/app.js                                                    | JavaScript       |      1,929 |        310 |        269 |      2,508 |
+| /Users/ryllis/IdeaProjects/chat/src/main/resources/static/index.html                                                | HTML             |        155 |         21 |         16 |        192 |
+| /Users/ryllis/IdeaProjects/chat/src/main/resources/static/style.css                                                 | PostCSS          |        883 |         14 |        156 |      1,053 |
+| /Users/ryllis/IdeaProjects/chat/src/test/java/com/example/chat/ChatApplicationTests.java                            | Java             |          9 |          0 |          5 |         14 |
+| /Users/ryllis/IdeaProjects/chat/test-client.html                                                                    | HTML             |        294 |          0 |         31 |        325 |
+| /Users/ryllis/IdeaProjects/chat/websocket-json-tests.md                                                             | Markdown         |        504 |          0 |        102 |        606 |
+| /Users/ryllis/IdeaProjects/chat/代码职责划分说明.md                                                                         | Markdown         |        275 |          2 |         92 |        369 |
+| /Users/ryllis/IdeaProjects/chat/使用文档.md                                                                             | Markdown         |        463 |          0 |        151 |        614 |
+| /Users/ryllis/IdeaProjects/chat/前端使用说明.md                                                                           | Markdown         |        118 |          0 |         39 |        157 |
+| /Users/ryllis/IdeaProjects/chat/功能分析与测试指南.md                                                                        | Markdown         |        486 |          0 |        124 |        610 |
+| /Users/ryllis/IdeaProjects/chat/多电脑连接指南.md                                                                          | Markdown         |        346 |          4 |        129 |        479 |
+| /Users/ryllis/IdeaProjects/chat/异常处理机制说明.md                                                                         | Markdown         |        442 |          0 |        122 |        564 |
+| /Users/ryllis/IdeaProjects/chat/敏感词过滤功能说明.md                                                                        | Markdown         |        286 |          0 |         88 |        374 |
+| /Users/ryllis/IdeaProjects/chat/现场展示操作步骤.md                                                                         | Markdown         |        373 |          0 |        166 |        539 |
+| /Users/ryllis/IdeaProjects/chat/答辩大纲.md                                                                             | Markdown         |        187 |          0 |         64 |        251 |
+| /Users/ryllis/IdeaProjects/chat/答辩展示文档.md                                                                           | Markdown         |        350 |          0 |        119 |        469 |
+| /Users/ryllis/IdeaProjects/chat/答辩问题与回答-精简版.md                                                                      | Markdown         |        457 |          0 |        188 |        645 |
+| /Users/ryllis/IdeaProjects/chat/答辩问题与回答.md                                                                          | Markdown         |        701 |          0 |        267 |        968 |
+| /Users/ryllis/IdeaProjects/chat/群聊功能完整测试步骤.md                                                                       | Markdown         |        468 |          0 |        134 |        602 |
+| /Users/ryllis/IdeaProjects/chat/设计模式说明.md                                                                           | Markdown         |        404 |          0 |        115 |        519 |
+| /Users/ryllis/IdeaProjects/chat/面向对象大作业开发文档.md                                                                      | Markdown         |      1,114 |          0 |        378 |      1,492 |
+| /Users/ryllis/IdeaProjects/chat/项目结构设计图.md                                                                          | Markdown         |        219 |          0 |         25 |        244 |
+| /Users/ryllis/IdeaProjects/chat/项目配置详解.md                                                                           | Markdown         |        504 |          9 |        176 |        689 |
+| Total                                                                                                               |                  |     15,119 |      1,006 |      4,041 |     20,166 |
++---------------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+

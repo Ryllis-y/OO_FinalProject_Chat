@@ -34,7 +34,7 @@ public class Get_HistoryHandler extends BaseActionHandler {
             Long beforeTime = params != null && params.has("beforeTime")
                     ? params.get("beforeTime").asLong()
                     : null;
-            
+
             // 获取目标（群组ID或私聊用户ID）
             String targetGroupId = params != null && params.has("groupId")
                     ? params.get("groupId").asText()
@@ -70,26 +70,26 @@ public class Get_HistoryHandler extends BaseActionHandler {
                 });
             } else {
                 // 如果没有指定目标，返回所有相关消息（兼容旧逻辑）
-                // 1. 私聊消息（自己发送或接收的）
-                DataCenter.MSG_HISTORY.values().forEach(msg -> {
-                    if (!msg.isGroup()) {
-                        if (msg.getFromUser().equals(currentUser) ||
-                                msg.getToUser().equals(currentUser)) {
+            // 1. 私聊消息（自己发送或接收的）
+            DataCenter.MSG_HISTORY.values().forEach(msg -> {
+                if (!msg.isGroup()) {
+                    if (msg.getFromUser().equals(currentUser) ||
+                            msg.getToUser().equals(currentUser)) {
+                        allMessages.add(msg);
+                    }
+                }
+            });
+
+            // 2. 群聊消息（自己所在的群组）
+            DataCenter.GROUPS.forEach((groupId, group) -> {
+                if (group.getMembers().contains(currentUser)) {
+                    DataCenter.MSG_HISTORY.values().forEach(msg -> {
+                        if (msg.isGroup() && msg.getToUser().equals(groupId)) {
                             allMessages.add(msg);
                         }
-                    }
-                });
-
-                // 2. 群聊消息（自己所在的群组）
-                DataCenter.GROUPS.forEach((groupId, group) -> {
-                    if (group.getMembers().contains(currentUser)) {
-                        DataCenter.MSG_HISTORY.values().forEach(msg -> {
-                            if (msg.isGroup() && msg.getToUser().equals(groupId)) {
-                                allMessages.add(msg);
-                            }
-                        });
-                    }
-                });
+                    });
+                }
+            });
             }
 
             // 过滤、排序、分页

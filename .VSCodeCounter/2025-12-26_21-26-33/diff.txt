@@ -1,0 +1,70 @@
+Date : 2025-12-26 21:26:33
+Directory : /Users/ryllis/IdeaProjects/chat
+Total : 27 files,  6292 codes, 95 comments, 2107 blanks, all 8494 lines
+
+Languages
++------------------+------------+------------+------------+------------+------------+
+| language         | files      | code       | comment    | blank      | total      |
++------------------+------------+------------+------------+------------+------------+
+| Markdown         |         15 |      5,821 |         15 |      2,005 |      7,841 |
+| Java             |          8 |        191 |         29 |         56 |        276 |
+| Python           |          1 |        132 |         26 |         25 |        183 |
+| JavaScript       |          1 |        131 |         25 |         16 |        172 |
+| PostCSS          |          1 |         15 |          0 |          2 |         17 |
+| pip requirements |          1 |          2 |          0 |          3 |          5 |
++------------------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                   |         27 |      6,292 |         95 |      2,107 |      8,494 |
+| . (Files)                                                                                                           |         17 |      5,955 |         41 |      2,033 |      8,029 |
+| src                                                                                                                 |         10 |        337 |         54 |         74 |        465 |
+| src/main                                                                                                            |         10 |        337 |         54 |         74 |        465 |
+| src/main/java                                                                                                       |          8 |        191 |         29 |         56 |        276 |
+| src/main/java/com                                                                                                   |          8 |        191 |         29 |         56 |        276 |
+| src/main/java/com/example                                                                                           |          8 |        191 |         29 |         56 |        276 |
+| src/main/java/com/example/chat                                                                                      |          8 |        191 |         29 |         56 |        276 |
+| src/main/java/com/example/chat/handler                                                                              |          7 |        175 |         26 |         53 |        254 |
+| src/main/java/com/example/chat/handler/action                                                                       |          7 |        175 |         26 |         53 |        254 |
+| src/main/java/com/example/chat/handler/action/impl                                                                  |          7 |        175 |         26 |         53 |        254 |
+| src/main/java/com/example/chat/service                                                                              |          1 |         16 |          3 |          3 |         22 |
+| src/main/java/com/example/chat/service/impl                                                                         |          1 |         16 |          3 |          3 |         22 |
+| src/main/resources                                                                                                  |          2 |        146 |         25 |         18 |        189 |
+| src/main/resources/static                                                                                           |          2 |        146 |         25 |         18 |        189 |
++---------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| filename                                                                                                            | language         | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
+| /Users/ryllis/IdeaProjects/chat/README_架构图生成.md                                                                     | Markdown         |         57 |          0 |         30 |         87 |
+| /Users/ryllis/IdeaProjects/chat/admin权限测试指南.md                                                                      | Markdown         |        313 |          0 |        110 |        423 |
+| /Users/ryllis/IdeaProjects/chat/architecture_mermaid.md                                                             | Markdown         |         79 |          0 |         24 |        103 |
+| /Users/ryllis/IdeaProjects/chat/draw_architecture.py                                                                | Python           |        132 |         26 |         25 |        183 |
+| /Users/ryllis/IdeaProjects/chat/requirements.txt                                                                    | pip requirements |          2 |          0 |          3 |          5 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Accept_FriendRequestHandler.java | Java             |          0 |          0 |          2 |          2 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Get_FriendRequestsHandler.java   | Java             |          0 |          0 |          2 |          2 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Kick_UserHandler.java            | Java             |         89 |         14 |         21 |        124 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Mute_UserHandler.java            | Java             |         86 |         12 |         22 |        120 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Reject_FriendRequestHandler.java | Java             |          0 |          0 |          2 |          2 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Send_FriendRequestHandler.java   | Java             |          0 |          0 |          2 |          2 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/handler/action/impl/Set_GroupAdminHandler.java       | Java             |          0 |          0 |          2 |          2 |
+| /Users/ryllis/IdeaProjects/chat/src/main/java/com/example/chat/service/impl/UserServiceImpl.java                    | Java             |         16 |          3 |          3 |         22 |
+| /Users/ryllis/IdeaProjects/chat/src/main/resources/static/app.js                                                    | JavaScript       |        131 |         25 |         16 |        172 |
+| /Users/ryllis/IdeaProjects/chat/src/main/resources/static/style.css                                                 | PostCSS          |         15 |          0 |          2 |         17 |
+| /Users/ryllis/IdeaProjects/chat/代码职责划分说明.md                                                                         | Markdown         |        275 |          2 |         92 |        369 |
+| /Users/ryllis/IdeaProjects/chat/多电脑连接指南.md                                                                          | Markdown         |        346 |          4 |        129 |        479 |
+| /Users/ryllis/IdeaProjects/chat/异常处理机制说明.md                                                                         | Markdown         |        442 |          0 |        122 |        564 |
+| /Users/ryllis/IdeaProjects/chat/现场展示操作步骤.md                                                                         | Markdown         |        373 |          0 |        166 |        539 |
+| /Users/ryllis/IdeaProjects/chat/答辩大纲.md                                                                             | Markdown         |        187 |          0 |         64 |        251 |
+| /Users/ryllis/IdeaProjects/chat/答辩展示文档.md                                                                           | Markdown         |        350 |          0 |        119 |        469 |
+| /Users/ryllis/IdeaProjects/chat/答辩问题与回答-精简版.md                                                                      | Markdown         |        457 |          0 |        188 |        645 |
+| /Users/ryllis/IdeaProjects/chat/答辩问题与回答.md                                                                          | Markdown         |        701 |          0 |        267 |        968 |
+| /Users/ryllis/IdeaProjects/chat/设计模式说明.md                                                                           | Markdown         |        404 |          0 |        115 |        519 |
+| /Users/ryllis/IdeaProjects/chat/面向对象大作业开发文档.md                                                                      | Markdown         |      1,114 |          0 |        378 |      1,492 |
+| /Users/ryllis/IdeaProjects/chat/项目结构设计图.md                                                                          | Markdown         |        219 |          0 |         25 |        244 |
+| /Users/ryllis/IdeaProjects/chat/项目配置详解.md                                                                           | Markdown         |        504 |          9 |        176 |        689 |
+| Total                                                                                                               |                  |      6,292 |         95 |      2,107 |      8,494 |
++---------------------------------------------------------------------------------------------------------------------+------------------+------------+------------+------------+------------+
